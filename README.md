@@ -1,5 +1,7 @@
 # Precifica.Plenna
 
+Publicado em: https://precifica-plenna.vercel.app
+
 Calculadora de precificação para peças impressas em 3D: informe os custos reais de
 produção (material, energia, depreciação, mão de obra, custos fixos, embalagem), escolha
 a margem de lucro e o app calcula o preço de venda correto, deixando explícita a diferença
