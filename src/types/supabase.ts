@@ -85,6 +85,50 @@ export type Database = {
           },
         ]
       }
+      bbcs_settings: {
+        Row: {
+          available_hours_per_month: number
+          monthly_cost_by_role: Json
+          realization_rate: number
+          success_commission_percent: number
+          tax_burden_percent: number
+          updated_at: string
+          user_id: string
+          utilization_rate: number
+          write_off_percent: number
+        }
+        Insert: {
+          available_hours_per_month?: number
+          monthly_cost_by_role?: Json
+          realization_rate?: number
+          success_commission_percent?: number
+          tax_burden_percent?: number
+          updated_at?: string
+          user_id?: string
+          utilization_rate?: number
+          write_off_percent?: number
+        }
+        Update: {
+          available_hours_per_month?: number
+          monthly_cost_by_role?: Json
+          realization_rate?: number
+          success_commission_percent?: number
+          tax_burden_percent?: number
+          updated_at?: string
+          user_id?: string
+          utilization_rate?: number
+          write_off_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bbcs_settings_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "pricing3d_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bbcs_priced_cases: {
         Row: {
           case_name: string

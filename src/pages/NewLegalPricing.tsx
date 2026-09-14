@@ -4,7 +4,6 @@ import { DirectCostsEditor } from '../components/legal/DirectCostsEditor'
 import { FeeResultCard } from '../components/legal/FeeResultCard'
 import { FixedCostAllocationField } from '../components/legal/FixedCostAllocationField'
 import { HourlyFeeResultCard } from '../components/legal/HourlyFeeResultCard'
-import { PracticeAssumptionsPanel } from '../components/legal/PracticeAssumptionsPanel'
 import { RoleAllocationsEditor } from '../components/legal/RoleAllocationsEditor'
 import { SuccessFeeResultCard } from '../components/legal/SuccessFeeResultCard'
 import { Button } from '../components/ui/Button'
@@ -13,19 +12,22 @@ import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
 import { useLocalStorageState } from '../hooks/useLocalStorageState'
 import { useAuth } from '../lib/auth/AuthContext'
+import { getLegalCase, saveLegalCase } from '../lib/data/legalHistory'
 import {
   listEmployeeProfiles,
   listFixedCostProfiles,
   type EmployeeProfile,
   type FixedCostProfile,
 } from '../lib/data/legalProfiles'
-import { getLegalCase, saveLegalCase } from '../lib/data/legalHistory'
+import { getLegalSettings } from '../lib/data/legalSettings'
 import { formatBRL } from '../lib/format'
 import { calculateSelectedModels, createDefaultLegalPricingInput } from '../lib/legalPricing/calculate'
 import { LEGAL_FEE_MODEL_LABELS } from '../types/legalPricing'
 import type { LegalFeeModel, LegalPricingInput } from '../types/legalPricing'
 
 const MODEL_OPTIONS = Object.entries(LEGAL_FEE_MODEL_LABELS) as [LegalFeeModel, string][]
+
+type PageTab = 'custos' | 'honorarios'
 
 export default function NewLegalPricing() {
   const { caseId } = useParams()
@@ -35,6 +37,7 @@ export default function NewLegalPricing() {
   // rascunho antigo com o formato incompatível.
   const draftKey = `precificacao3d:legal-draft-v2:${user?.id ?? 'anon'}`
   const [input, setInput] = useLocalStorageState<LegalPricingInput>(draftKey, createDefaultLegalPricingInput)
+  const [activeTab, setActiveTab] = useState<PageTab>('custos')
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
   const [saving, setSaving] = useState(false)
@@ -43,7 +46,12 @@ export default function NewLegalPricing() {
   useEffect(() => {
     listEmployeeProfiles().then(setEmployees).catch(() => {})
     listFixedCostProfiles().then(setFixedCosts).catch(() => {})
-  }, [])
+    // As premissas do escritório agora só são editadas em "Perfis salvos" —
+    // aqui só lemos o valor mais atual para calcular.
+    getLegalSettings()
+      .then((assumptions) => setInput((prev) => ({ ...prev, assumptions })))
+      .catch(() => {})
+  }, [setInput])
 
   useEffect(() => {
     if (!caseId) return
@@ -64,7 +72,7 @@ export default function NewLegalPricing() {
 
   function resetForm() {
     if (!confirm('Isso vai limpar todos os campos do cálculo atual. Continuar?')) return
-    setInput(createDefaultLegalPricingInput())
+    setInput((prev) => ({ ...createDefaultLegalPricingInput(), assumptions: prev.assumptions }))
     setSaveMessage(null)
   }
 
@@ -95,6 +103,11 @@ export default function NewLegalPricing() {
     results.adhoc && <FeeResultCard key="adhoc" result={results.adhoc} priceLabel="Valor fechado sugerido" />,
   ].filter(Boolean)
 
+  const TABS: { id: PageTab; label: string }[] = [
+    { id: 'custos', label: 'Custos do caso' },
+    { id: 'honorarios', label: 'Honorários' },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -103,7 +116,8 @@ export default function NewLegalPricing() {
             Nova precificação — BBCS Advocacia
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Os valores são calculados em tempo real. Combine mais de uma forma de honorário no mesmo caso, se fizer sentido.
+            Preencha os custos do caso, depois escolha e combine as formas de honorário — os valores são
+            calculados em tempo real.
           </p>
         </div>
         <button
@@ -115,138 +129,167 @@ export default function NewLegalPricing() {
         </button>
       </div>
 
-      <Card className="p-4">
-        <TextField
-          label="Nome do processo/caso"
-          value={input.caseName}
-          onChange={(v) => setInput({ ...input, caseName: v })}
-          placeholder="Ex.: Ação trabalhista — Cliente XYZ"
-        />
-      </Card>
-
-      <Card className="divide-y divide-slate-200 dark:divide-slate-800">
-        <PracticeAssumptionsPanel
-          assumptions={input.assumptions}
-          onChange={(assumptions) => setInput({ ...input, assumptions })}
-        />
-      </Card>
-
-      <Card className="p-4">
-        <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
-          Formas de honorário aplicadas a este caso
-        </h2>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-          Selecione uma ou mais. Os dados abaixo (profissionais/horas, custos diretos, rateio e margem) são únicos
-          para o caso e alimentam todas as formas marcadas.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {MODEL_OPTIONS.map(([id, label]) => {
-            const active = input.selectedModels.includes(id)
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => toggleModel(id)}
-                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  active
-                    ? 'border-indigo-600 bg-indigo-600 text-white'
-                    : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
-                }`}
-              >
-                {active ? '✓ ' : ''}
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      </Card>
-
-      <Card className="p-4 space-y-4">
-        <RoleAllocationsEditor
-          roles={input.roles}
-          assumptions={input.assumptions}
-          employees={employees}
-          onChange={(roles) => setInput({ ...input, roles })}
-          hoursLabel={hoursLabel}
-        />
-        <DirectCostsEditor items={input.directCosts} onChange={(directCosts) => setInput({ ...input, directCosts })} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FixedCostAllocationField
-            value={input.fixedCostAllocation}
-            fixedCosts={fixedCosts}
-            onChange={(v) => setInput({ ...input, fixedCostAllocation: v })}
-          />
-          <NumberField
-            label="Margem de lucro desejada"
-            suffix="%"
-            value={input.marginPercent}
-            onChange={(v) => setInput({ ...input, marginPercent: v })}
-          />
-        </div>
-      </Card>
-
-      {input.selectedModels.includes('success') && (
-        <Card className="p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Dados do honorário de êxito</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <NumberField
-              label="Valor da causa / proveito econômico"
-              suffix="R$"
-              value={input.caseValue}
-              onChange={(v) => setInput({ ...input, caseValue: v })}
-            />
-            <NumberField
-              label="Probabilidade de êxito"
-              suffix="%"
-              value={input.successProbabilityPercent}
-              onChange={(v) => setInput({ ...input, successProbabilityPercent: v })}
-            />
-          </div>
-        </Card>
-      )}
-
-      {input.selectedModels.includes('adhoc') && (
-        <Card className="p-4">
-          <TextField
-            label="Nome do serviço (contratual avulso)"
-            value={input.serviceName}
-            onChange={(v) => setInput({ ...input, serviceName: v })}
-            placeholder="Ex.: Elaboração de contrato de prestação de serviços"
-          />
-        </Card>
-      )}
-
-      {resultCards.length === 0 && (
-        <p className="text-sm text-slate-400 dark:text-slate-500">
-          Selecione ao menos uma forma de honorário acima para ver o resultado.
-        </p>
-      )}
-
-      {resultCards.length > 0 && (
-        <div className={`grid grid-cols-1 gap-4 ${resultCards.length > 1 ? 'lg:grid-cols-2' : ''}`}>{resultCards}</div>
-      )}
-
-      {resultCards.length > 1 && results.estimatedTotalRevenue != null && (
-        <Card className="border-indigo-300 p-5 dark:border-indigo-700">
-          <p className="text-xs font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
-            Receita total estimada do caso (formas combinadas)
-          </p>
-          <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
-            {formatBRL(results.estimatedTotalRevenue)}
-          </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Soma o valor fixo de cada forma selecionada (por hora, fixo/recorrente, avulso) com o valor esperado —
-            ponderado pela probabilidade — do componente de êxito, quando aplicável.
-          </p>
-        </Card>
-      )}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={handleSaveHistory} disabled={saving || resultCards.length === 0}>
-          {saving ? 'Salvando…' : 'Salvar orçamento no histórico'}
-        </Button>
-        {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
+      <div className="flex w-fit gap-1 rounded-md border border-slate-300 p-1 text-sm dark:border-slate-700">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded px-3 py-1.5 font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      {activeTab === 'custos' && (
+        <>
+          <Card className="p-4">
+            <TextField
+              label="Nome do processo/caso"
+              value={input.caseName}
+              onChange={(v) => setInput({ ...input, caseName: v })}
+              placeholder="Ex.: Ação trabalhista — Cliente XYZ"
+            />
+          </Card>
+
+          <Card className="p-4 space-y-4">
+            <RoleAllocationsEditor
+              roles={input.roles}
+              assumptions={input.assumptions}
+              employees={employees}
+              onChange={(roles) => setInput({ ...input, roles })}
+              hoursLabel={hoursLabel}
+            />
+            <DirectCostsEditor
+              items={input.directCosts}
+              onChange={(directCosts) => setInput({ ...input, directCosts })}
+            />
+            <FixedCostAllocationField
+              value={input.fixedCostAllocation}
+              fixedCosts={fixedCosts}
+              onChange={(v) => setInput({ ...input, fixedCostAllocation: v })}
+            />
+          </Card>
+
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            As premissas do escritório (custo por cargo, horas disponíveis, tributos…) agora ficam só na aba{' '}
+            <strong>Perfis salvos</strong>.
+          </p>
+        </>
+      )}
+
+      {activeTab === 'honorarios' && (
+        <>
+          <Card className="p-4">
+            <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Formas de honorário aplicadas a este caso
+            </h2>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+              Selecione uma ou mais — todas usam os custos preenchidos na aba "Custos do caso".
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {MODEL_OPTIONS.map(([id, label]) => {
+                const active = input.selectedModels.includes(id)
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggleModel(id)}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      active
+                        ? 'border-indigo-600 bg-indigo-600 text-white'
+                        : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {active ? '✓ ' : ''}
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-4 max-w-xs">
+              <NumberField
+                label="Margem de lucro desejada"
+                suffix="%"
+                value={input.marginPercent}
+                onChange={(v) => setInput({ ...input, marginPercent: v })}
+              />
+            </div>
+          </Card>
+
+          {input.selectedModels.includes('success') && (
+            <Card className="p-4">
+              <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Dados do honorário de êxito
+              </h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <NumberField
+                  label="Valor da causa / proveito econômico"
+                  suffix="R$"
+                  value={input.caseValue}
+                  onChange={(v) => setInput({ ...input, caseValue: v })}
+                />
+                <NumberField
+                  label="Probabilidade de êxito"
+                  suffix="%"
+                  value={input.successProbabilityPercent}
+                  onChange={(v) => setInput({ ...input, successProbabilityPercent: v })}
+                />
+              </div>
+            </Card>
+          )}
+
+          {input.selectedModels.includes('adhoc') && (
+            <Card className="p-4">
+              <TextField
+                label="Nome do serviço (contratual avulso)"
+                value={input.serviceName}
+                onChange={(v) => setInput({ ...input, serviceName: v })}
+                placeholder="Ex.: Elaboração de contrato de prestação de serviços"
+              />
+            </Card>
+          )}
+
+          {resultCards.length === 0 && (
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              Selecione ao menos uma forma de honorário acima para ver o resultado.
+            </p>
+          )}
+
+          {resultCards.length > 0 && (
+            <div className={`grid grid-cols-1 gap-4 ${resultCards.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+              {resultCards}
+            </div>
+          )}
+
+          {resultCards.length > 1 && results.estimatedTotalRevenue != null && (
+            <Card className="border-indigo-300 p-5 dark:border-indigo-700">
+              <p className="text-xs font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
+                Receita total estimada do caso (formas combinadas)
+              </p>
+              <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+                {formatBRL(results.estimatedTotalRevenue)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Soma o valor fixo de cada forma selecionada (por hora, fixo/recorrente, avulso) com o valor
+                esperado — ponderado pela probabilidade — do componente de êxito, quando aplicável.
+              </p>
+            </Card>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={handleSaveHistory} disabled={saving || resultCards.length === 0}>
+              {saving ? 'Salvando…' : 'Salvar orçamento no histórico'}
+            </Button>
+            {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
+          </div>
+        </>
+      )}
     </div>
   )
 }

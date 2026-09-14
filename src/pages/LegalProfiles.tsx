@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { PracticeAssumptionsPanel } from '../components/legal/PracticeAssumptionsPanel'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
+import { createDefaultPracticeAssumptions } from '../lib/legalPricing/calculate'
 import {
   deleteEmployeeProfile,
   deleteFixedCostProfile,
@@ -13,9 +15,10 @@ import {
   type EmployeeProfile,
   type FixedCostProfile,
 } from '../lib/data/legalProfiles'
+import { getLegalSettings, saveLegalSettings } from '../lib/data/legalSettings'
 import { formatBRL } from '../lib/format'
 import { LAWYER_ROLE_LABELS } from '../types/legalPricing'
-import type { LawyerRole } from '../types/legalPricing'
+import type { LawyerRole, PracticeAssumptions } from '../types/legalPricing'
 
 const ROLE_OPTIONS = Object.entries(LAWYER_ROLE_LABELS) as [LawyerRole, string][]
 
@@ -29,16 +32,19 @@ const emptyFixedCost = { name: '', monthlyCost: 0 }
 export default function LegalProfiles() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
+  const [assumptions, setAssumptions] = useState<PracticeAssumptions>(createDefaultPracticeAssumptions())
   const [newEmployee, setNewEmployee] = useState(emptyEmployee)
   const [newFixedCost, setNewFixedCost] = useState(emptyFixedCost)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [assumptionsStatus, setAssumptionsStatus] = useState<string | null>(null)
 
   async function refresh() {
     try {
-      const [e, f] = await Promise.all([listEmployeeProfiles(), listFixedCostProfiles()])
+      const [e, f, a] = await Promise.all([listEmployeeProfiles(), listFixedCostProfiles(), getLegalSettings()])
       setEmployees(e)
       setFixedCosts(f)
+      setAssumptions(a)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar perfis.')
     } finally {
@@ -49,6 +55,16 @@ export default function LegalProfiles() {
   useEffect(() => {
     refresh()
   }, [])
+
+  async function handleSaveAssumptions() {
+    setAssumptionsStatus(null)
+    try {
+      await saveLegalSettings(assumptions)
+      setAssumptionsStatus('Premissas salvas.')
+    } catch (err) {
+      setAssumptionsStatus(err instanceof Error ? `Erro: ${err.message}` : 'Erro ao salvar.')
+    }
+  }
 
   async function addEmployee() {
     if (!newEmployee.name.trim()) return
@@ -70,6 +86,14 @@ export default function LegalProfiles() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
+
+      <Card className="divide-y divide-slate-200 dark:divide-slate-800">
+        <PracticeAssumptionsPanel assumptions={assumptions} onChange={setAssumptions} />
+        <div className="flex flex-wrap items-center gap-3 p-4">
+          <Button onClick={handleSaveAssumptions}>Salvar premissas</Button>
+          {assumptionsStatus && <p className="text-sm text-slate-600 dark:text-slate-400">{assumptionsStatus}</p>}
+        </div>
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Funcionários</h2>
