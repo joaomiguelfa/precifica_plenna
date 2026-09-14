@@ -1,17 +1,21 @@
+import type { EmployeeProfile, FixedCostProfile } from '../../lib/data/legalProfiles'
 import { calculateRecurringFee } from '../../lib/legalPricing/calculate'
 import type { PracticeAssumptions, RecurringFeeInput } from '../../types/legalPricing'
 import { NumberField } from '../ui/NumberField'
 import { DirectCostsEditor } from './DirectCostsEditor'
 import { FeeResultCard } from './FeeResultCard'
+import { FixedCostAllocationField } from './FixedCostAllocationField'
 import { RoleAllocationsEditor } from './RoleAllocationsEditor'
 
 interface Props {
   input: RecurringFeeInput
   assumptions: PracticeAssumptions
+  employees: EmployeeProfile[]
+  fixedCosts: FixedCostProfile[]
   onChange: (input: RecurringFeeInput) => void
 }
 
-export function RecurringFeeForm({ input, assumptions, onChange }: Props) {
+export function RecurringFeeForm({ input, assumptions, employees, fixedCosts, onChange }: Props) {
   const result = calculateRecurringFee(input, assumptions)
 
   return (
@@ -24,6 +28,7 @@ export function RecurringFeeForm({ input, assumptions, onChange }: Props) {
         <RoleAllocationsEditor
           roles={input.roles}
           assumptions={assumptions}
+          employees={employees}
           onChange={(roles) => onChange({ ...input, roles })}
           hoursLabel="Horas/mês estimadas"
         />
@@ -34,10 +39,9 @@ export function RecurringFeeForm({ input, assumptions, onChange }: Props) {
           placeholder="Ex.: correspondente jurídico fixo, software dedicado ao cliente…"
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <NumberField
-            label="Rateio de custos fixos"
-            suffix="R$"
+          <FixedCostAllocationField
             value={input.fixedCostAllocation}
+            fixedCosts={fixedCosts}
             onChange={(v) => onChange({ ...input, fixedCostAllocation: v })}
           />
           <NumberField

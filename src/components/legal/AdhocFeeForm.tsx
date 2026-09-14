@@ -1,18 +1,22 @@
+import type { EmployeeProfile, FixedCostProfile } from '../../lib/data/legalProfiles'
 import { calculateAdhocFee } from '../../lib/legalPricing/calculate'
 import type { AdhocFeeInput, PracticeAssumptions } from '../../types/legalPricing'
 import { NumberField } from '../ui/NumberField'
 import { TextField } from '../ui/TextField'
 import { DirectCostsEditor } from './DirectCostsEditor'
 import { FeeResultCard } from './FeeResultCard'
+import { FixedCostAllocationField } from './FixedCostAllocationField'
 import { RoleAllocationsEditor } from './RoleAllocationsEditor'
 
 interface Props {
   input: AdhocFeeInput
   assumptions: PracticeAssumptions
+  employees: EmployeeProfile[]
+  fixedCosts: FixedCostProfile[]
   onChange: (input: AdhocFeeInput) => void
 }
 
-export function AdhocFeeForm({ input, assumptions, onChange }: Props) {
+export function AdhocFeeForm({ input, assumptions, employees, fixedCosts, onChange }: Props) {
   const result = calculateAdhocFee(input, assumptions)
 
   return (
@@ -31,6 +35,7 @@ export function AdhocFeeForm({ input, assumptions, onChange }: Props) {
         <RoleAllocationsEditor
           roles={input.roles}
           assumptions={assumptions}
+          employees={employees}
           onChange={(roles) => onChange({ ...input, roles })}
         />
         <DirectCostsEditor
@@ -39,10 +44,9 @@ export function AdhocFeeForm({ input, assumptions, onChange }: Props) {
           placeholder="Ex.: taxas cartorárias, autenticações, traduções…"
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <NumberField
-            label="Rateio de custos fixos"
-            suffix="R$"
+          <FixedCostAllocationField
             value={input.fixedCostAllocation}
+            fixedCosts={fixedCosts}
             onChange={(v) => onChange({ ...input, fixedCostAllocation: v })}
           />
           <NumberField

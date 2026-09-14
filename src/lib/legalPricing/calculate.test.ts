@@ -10,8 +10,13 @@ import {
 } from './calculate'
 import type { DirectCostItem, PracticeAssumptions, RoleAllocation } from '../../types/legalPricing'
 
-function role(id: string, roleName: RoleAllocation['role'], hours: number): RoleAllocation {
-  return { id, role: roleName, hours }
+function role(
+  id: string,
+  roleName: RoleAllocation['role'],
+  hours: number,
+  monthlyCostOverride?: number,
+): RoleAllocation {
+  return { id, role: roleName, hours, monthlyCostOverride }
 }
 
 function directCost(id: string, name: string, cost: number): DirectCostItem {
@@ -30,6 +35,11 @@ describe('hourlyCostForRole', () => {
     expect(round2(hourlyCostForRole('associado_senior', assumptions))).toBeCloseTo(157.34, 1)
     expect(round2(hourlyCostForRole('associado_junior', assumptions))).toBeCloseTo(78.67, 1)
     expect(round2(hourlyCostForRole('estagiario', assumptions))).toBeCloseTo(19.23, 1)
+  })
+
+  it('usa o custo mensal de um funcionário salvo no lugar do padrão do cargo, quando informado', () => {
+    const billableHours = 176 * 0.65
+    expect(hourlyCostForRole('associado_senior', assumptions, 22000)).toBeCloseTo(22000 / billableHours, 2)
   })
 
   it('não divide por zero quando não há horas disponíveis/utilização', () => {
@@ -77,6 +87,20 @@ describe('calculateHourlyFee', () => {
     )
     // custo=100; preço = 100 / (1 - 0.20 - 0.15 - 0.10) = 100/0.55
     expect(result.price).toBe(round2(100 / 0.55))
+  })
+
+  it('usa o custo mensal individual de um funcionário salvo em vez do custo padrão do cargo', () => {
+    const result = calculateHourlyFee(
+      {
+        roles: [role('1', 'associado_senior', 10, 22000)],
+        directCosts: [],
+        fixedCostAllocation: 0,
+        marginPercent: 0,
+      },
+      { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0 },
+    )
+    const expectedLabor = 10 * (22000 / (176 * 0.65))
+    expect(result.costBreakdown.laborCost).toBeCloseTo(expectedLabor, 1)
   })
 
   it('marca como inválido quando margem+tributos+provisão somam 100% ou mais', () => {

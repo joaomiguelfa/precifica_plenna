@@ -1,18 +1,22 @@
+import type { EmployeeProfile, FixedCostProfile } from '../../lib/data/legalProfiles'
+import { formatBRL } from '../../lib/format'
 import { calculateHourlyFee } from '../../lib/legalPricing/calculate'
 import type { HourlyFeeInput, PracticeAssumptions } from '../../types/legalPricing'
 import { NumberField } from '../ui/NumberField'
 import { DirectCostsEditor } from './DirectCostsEditor'
 import { FeeResultCard } from './FeeResultCard'
+import { FixedCostAllocationField } from './FixedCostAllocationField'
 import { RoleAllocationsEditor } from './RoleAllocationsEditor'
-import { formatBRL } from '../../lib/format'
 
 interface Props {
   input: HourlyFeeInput
   assumptions: PracticeAssumptions
+  employees: EmployeeProfile[]
+  fixedCosts: FixedCostProfile[]
   onChange: (input: HourlyFeeInput) => void
 }
 
-export function HourlyFeeForm({ input, assumptions, onChange }: Props) {
+export function HourlyFeeForm({ input, assumptions, employees, fixedCosts, onChange }: Props) {
   const result = calculateHourlyFee(input, assumptions)
 
   return (
@@ -25,6 +29,7 @@ export function HourlyFeeForm({ input, assumptions, onChange }: Props) {
         <RoleAllocationsEditor
           roles={input.roles}
           assumptions={assumptions}
+          employees={employees}
           onChange={(roles) => onChange({ ...input, roles })}
         />
         <DirectCostsEditor
@@ -32,10 +37,9 @@ export function HourlyFeeForm({ input, assumptions, onChange }: Props) {
           onChange={(directCosts) => onChange({ ...input, directCosts })}
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <NumberField
-            label="Rateio de custos fixos"
-            suffix="R$"
+          <FixedCostAllocationField
             value={input.fixedCostAllocation}
+            fixedCosts={fixedCosts}
             onChange={(v) => onChange({ ...input, fixedCostAllocation: v })}
           />
           <NumberField

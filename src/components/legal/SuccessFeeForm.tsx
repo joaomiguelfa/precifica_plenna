@@ -1,18 +1,22 @@
+import type { EmployeeProfile, FixedCostProfile } from '../../lib/data/legalProfiles'
 import { calculateSuccessFee } from '../../lib/legalPricing/calculate'
 import { formatBRL, formatPercent } from '../../lib/format'
 import type { PracticeAssumptions, SuccessFeeInput } from '../../types/legalPricing'
 import { Card } from '../ui/Card'
 import { NumberField } from '../ui/NumberField'
 import { DirectCostsEditor } from './DirectCostsEditor'
+import { FixedCostAllocationField } from './FixedCostAllocationField'
 import { RoleAllocationsEditor } from './RoleAllocationsEditor'
 
 interface Props {
   input: SuccessFeeInput
   assumptions: PracticeAssumptions
+  employees: EmployeeProfile[]
+  fixedCosts: FixedCostProfile[]
   onChange: (input: SuccessFeeInput) => void
 }
 
-export function SuccessFeeForm({ input, assumptions, onChange }: Props) {
+export function SuccessFeeForm({ input, assumptions, employees, fixedCosts, onChange }: Props) {
   const result = calculateSuccessFee(input, assumptions)
 
   return (
@@ -39,6 +43,7 @@ export function SuccessFeeForm({ input, assumptions, onChange }: Props) {
         <RoleAllocationsEditor
           roles={input.roles}
           assumptions={assumptions}
+          employees={employees}
           onChange={(roles) => onChange({ ...input, roles })}
         />
         <DirectCostsEditor
@@ -46,10 +51,9 @@ export function SuccessFeeForm({ input, assumptions, onChange }: Props) {
           onChange={(directCosts) => onChange({ ...input, directCosts })}
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <NumberField
-            label="Rateio de custos fixos"
-            suffix="R$"
+          <FixedCostAllocationField
             value={input.fixedCostAllocation}
+            fixedCosts={fixedCosts}
             onChange={(v) => onChange({ ...input, fixedCostAllocation: v })}
           />
           <NumberField

@@ -43,6 +43,9 @@ export interface RoleAllocation {
   id: string
   role: LawyerRole
   hours: number
+  /** Se veio de um funcionário salvo: nome (só exibição) e o custo mensal dele, que sobrepõe o custo padrão do cargo nas premissas. */
+  employeeName?: string | null
+  monthlyCostOverride?: number | null
 }
 
 export interface DirectCostItem {
@@ -142,6 +145,8 @@ export type AdhocFeeResult = FeeResult
 // ---------------------------------------------------------------------------
 
 export interface LegalPricingInput {
+  /** Nome do processo/caso — equivalente ao "nome da peça" do Precifica3D. */
+  caseName: string
   selectedModel: LegalFeeModel
   assumptions: PracticeAssumptions
   hourly: HourlyFeeInput

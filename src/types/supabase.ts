@@ -12,6 +12,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      bbcs_employees: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_cost: number
+          name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_cost?: number
+          name: string
+          role: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_cost?: number
+          name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bbcs_employees_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pricing3d_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bbcs_fixed_costs: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_cost: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_cost?: number
+          name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_cost?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bbcs_fixed_costs_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pricing3d_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing3d_accessory_profiles: {
         Row: {
           acquisition_cost: number

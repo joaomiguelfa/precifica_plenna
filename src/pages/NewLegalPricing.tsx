@@ -1,11 +1,19 @@
+import { useEffect, useState } from 'react'
 import { AdhocFeeForm } from '../components/legal/AdhocFeeForm'
 import { HourlyFeeForm } from '../components/legal/HourlyFeeForm'
 import { PracticeAssumptionsPanel } from '../components/legal/PracticeAssumptionsPanel'
 import { RecurringFeeForm } from '../components/legal/RecurringFeeForm'
 import { SuccessFeeForm } from '../components/legal/SuccessFeeForm'
 import { Card } from '../components/ui/Card'
+import { TextField } from '../components/ui/TextField'
 import { useLocalStorageState } from '../hooks/useLocalStorageState'
 import { useAuth } from '../lib/auth/AuthContext'
+import {
+  listEmployeeProfiles,
+  listFixedCostProfiles,
+  type EmployeeProfile,
+  type FixedCostProfile,
+} from '../lib/data/legalProfiles'
 import { createDefaultLegalPricingInput } from '../lib/legalPricing/calculate'
 import type { LegalFeeModel, LegalPricingInput } from '../types/legalPricing'
 
@@ -20,6 +28,13 @@ export default function NewLegalPricing() {
   const { user } = useAuth()
   const draftKey = `precificacao3d:legal-draft:${user?.id ?? 'anon'}`
   const [input, setInput] = useLocalStorageState<LegalPricingInput>(draftKey, createDefaultLegalPricingInput)
+  const [employees, setEmployees] = useState<EmployeeProfile[]>([])
+  const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
+
+  useEffect(() => {
+    listEmployeeProfiles().then(setEmployees).catch(() => {})
+    listFixedCostProfiles().then(setFixedCosts).catch(() => {})
+  }, [])
 
   function resetForm() {
     if (!confirm('Isso vai limpar todos os campos do cálculo atual. Continuar?')) return
@@ -45,6 +60,15 @@ export default function NewLegalPricing() {
           Novo cálculo
         </button>
       </div>
+
+      <Card className="p-4">
+        <TextField
+          label="Nome do processo/caso"
+          value={input.caseName}
+          onChange={(v) => setInput({ ...input, caseName: v })}
+          placeholder="Ex.: Ação trabalhista — Cliente XYZ"
+        />
+      </Card>
 
       <Card className="divide-y divide-slate-200 dark:divide-slate-800">
         <PracticeAssumptionsPanel
@@ -74,6 +98,8 @@ export default function NewLegalPricing() {
         <HourlyFeeForm
           input={input.hourly}
           assumptions={input.assumptions}
+          employees={employees}
+          fixedCosts={fixedCosts}
           onChange={(hourly) => setInput({ ...input, hourly })}
         />
       )}
@@ -81,6 +107,8 @@ export default function NewLegalPricing() {
         <RecurringFeeForm
           input={input.recurring}
           assumptions={input.assumptions}
+          employees={employees}
+          fixedCosts={fixedCosts}
           onChange={(recurring) => setInput({ ...input, recurring })}
         />
       )}
@@ -88,6 +116,8 @@ export default function NewLegalPricing() {
         <SuccessFeeForm
           input={input.success}
           assumptions={input.assumptions}
+          employees={employees}
+          fixedCosts={fixedCosts}
           onChange={(success) => setInput({ ...input, success })}
         />
       )}
@@ -95,6 +125,8 @@ export default function NewLegalPricing() {
         <AdhocFeeForm
           input={input.adhoc}
           assumptions={input.assumptions}
+          employees={employees}
+          fixedCosts={fixedCosts}
           onChange={(adhoc) => setInput({ ...input, adhoc })}
         />
       )}

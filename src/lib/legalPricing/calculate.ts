@@ -26,14 +26,19 @@ export function round2(value: number): number {
  * faturáveis (disponíveis × meta de utilização), não pelas horas totais —
  * é assim que o BBCS calcula o "custo direto por hora faturável".
  */
-export function hourlyCostForRole(role: LawyerRole, assumptions: PracticeAssumptions): number {
+export function hourlyCostForRole(
+  role: LawyerRole,
+  assumptions: PracticeAssumptions,
+  monthlyCostOverride?: number | null,
+): number {
   const billableHours = assumptions.availableHoursPerMonth * (assumptions.utilizationRate / 100)
   if (billableHours <= 0) return 0
-  return assumptions.monthlyCostByRole[role] / billableHours
+  const monthlyCost = monthlyCostOverride ?? assumptions.monthlyCostByRole[role]
+  return monthlyCost / billableHours
 }
 
 function laborCost(roles: RoleAllocation[], assumptions: PracticeAssumptions): number {
-  return roles.reduce((sum, r) => sum + r.hours * hourlyCostForRole(r.role, assumptions), 0)
+  return roles.reduce((sum, r) => sum + r.hours * hourlyCostForRole(r.role, assumptions, r.monthlyCostOverride), 0)
 }
 
 function directCostTotal(items: DirectCostItem[]): number {
@@ -229,6 +234,7 @@ export function createDefaultPracticeAssumptions(): PracticeAssumptions {
 
 export function createDefaultLegalPricingInput(): LegalPricingInput {
   return {
+    caseName: '',
     selectedModel: 'hourly',
     assumptions: createDefaultPracticeAssumptions(),
     hourly: {
