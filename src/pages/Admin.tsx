@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { TextField } from '../components/ui/TextField'
 import { useAuth } from '../lib/auth/AuthContext'
 import {
   listAllPricedPieces,
@@ -12,13 +14,18 @@ import { formatBRL } from '../lib/format'
 import { documentLabel, formatDocument } from '../lib/validation/document'
 
 export default function Admin() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, inviteUser } = useAuth()
   const [users, setUsers] = useState<UserAccount[]>([])
   const [pieces, setPieces] = useState<AdminPricedPieceSummary[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [inviteSending, setInviteSending] = useState(false)
+  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   async function refresh(query?: string) {
     try {
@@ -54,6 +61,23 @@ export default function Admin() {
     }
   }
 
+  async function handleInvite(e: FormEvent) {
+    e.preventDefault()
+    setInviteMessage(null)
+    setInviteSending(true)
+    try {
+      await inviteUser({ email: inviteEmail, fullName: inviteName })
+      setInviteMessage({ type: 'success', text: `Convite enviado para ${inviteEmail}.` })
+      setInviteEmail('')
+      setInviteName('')
+      refresh(search)
+    } catch (err) {
+      setInviteMessage({ type: 'error', text: err instanceof Error ? err.message : 'Erro ao enviar convite.' })
+    } finally {
+      setInviteSending(false)
+    }
+  }
+
   if (loading) return <p className="text-sm text-slate-400 dark:text-slate-500">Carregando…</p>
 
   return (
@@ -64,6 +88,48 @@ export default function Admin() {
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+      <Card className="p-5">
+        <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">Convidar usuário</h2>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+          O convite chega direto no e-mail informado, com um link para a pessoa definir a senha e completar o
+          cadastro (nome e CPF/CNPJ).
+        </p>
+        <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleInvite}>
+          <TextField
+            label="Nome (opcional)"
+            value={inviteName}
+            onChange={setInviteName}
+            className="sm:max-w-xs"
+            placeholder="Como a pessoa se chama"
+          />
+          <label className="block flex-1 text-sm">
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">E-mail</span>
+            <input
+              type="email"
+              required
+              placeholder="pessoa@exemplo.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+          </label>
+          <Button type="submit" disabled={inviteSending}>
+            {inviteSending ? 'Enviando…' : 'Enviar convite'}
+          </Button>
+        </form>
+        {inviteMessage && (
+          <p
+            className={`mt-2 text-sm ${
+              inviteMessage.type === 'success'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}
+          >
+            {inviteMessage.text}
+          </p>
+        )}
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Usuários ({users.length})</h2>

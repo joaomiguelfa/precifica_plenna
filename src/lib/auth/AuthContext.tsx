@@ -25,6 +25,10 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   updatePassword: (newPassword: string) => Promise<void>
+  /** Admin-only: envia um convite por e-mail que já cria a conta e manda o link de acesso. */
+  inviteUser: (params: { email: string; fullName?: string }) => Promise<void>
+  /** Completa/atualiza nome e documento do próprio perfil (usado após aceitar um convite). */
+  updateProfile: (params: { fullName: string; document: string }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -50,13 +54,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.subscription.unsubscribe()
   }, [])
 
+  const userId = session?.user.id
+
+  async function refreshProfile(id: string) {
+    const { data } = await supabase
+      .from('pricing3d_profiles')
+      .select('full_name, document, email, role')
+      .eq('id', id)
+      .maybeSingle()
+    setProfile(
+      data
+        ? {
+            fullName: data.full_name,
+            document: data.document,
+            email: data.email,
+            role: data.role === 'admin' ? 'admin' : 'user',
+          }
+        : null,
+    )
+  }
+
   useEffect(() => {
-    const userId = session?.user.id
     if (!userId) {
       setProfile(null)
       return
     }
-
     let cancelled = false
     supabase
       .from('pricing3d_profiles')
@@ -79,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [session?.user.id])
+  }, [userId])
 
   async function signUp({
     fullName,
@@ -125,6 +147,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPasswordRecovery(false)
   }
 
+  async function inviteUser({ email, fullName }: { email: string; fullName?: string }) {
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      body: {
+        email,
+        fullName: fullName ?? '',
+        redirectTo: `${window.location.origin}/completar-cadastro`,
+      },
+    })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+  }
+
+  async function updateProfile({ fullName, document }: { fullName: string; document: string }) {
+    if (!userId) throw new Error('Sem sessão ativa.')
+    const { error } = await supabase
+      .from('pricing3d_profiles')
+      .update({ full_name: fullName.trim(), document: onlyDigits(document) })
+      .eq('id', userId)
+    if (error) throw error
+    await refreshProfile(userId)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -139,6 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         resetPassword,
         updatePassword,
+        inviteUser,
+        updateProfile,
       }}
     >
       {children}

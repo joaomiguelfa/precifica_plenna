@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { useAuth } from './lib/auth/AuthContext'
 import { useTheme } from './lib/theme/ThemeContext'
 import Admin from './pages/Admin'
+import CompleteProfile from './pages/CompleteProfile'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
@@ -40,6 +41,7 @@ function ThemeToggle() {
 function Header() {
   const { session, profile, isAdmin, signOut } = useAuth()
   const items = isAdmin ? [...navItems, { to: '/admin', label: 'Administração', end: false }] : navItems
+  const profileComplete = profile != null && profile.document !== ''
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
@@ -48,7 +50,7 @@ function Header() {
           <span aria-hidden="true">🖨️</span>
           <span>Precifica.Plenna</span>
         </div>
-        {session && (
+        {session && profileComplete && (
           <nav className="-mx-2 flex flex-1 justify-end gap-1 overflow-x-auto">
             {items.map((item) => (
               <NavLink
@@ -101,6 +103,14 @@ function App() {
           <Route path="/cadastro" element={<SignUp />} />
           <Route path="/esqueci-senha" element={<ForgotPassword />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
+          <Route
+            path="/completar-cadastro"
+            element={
+              <ProtectedRoute>
+                <CompleteProfile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/"
             element={
