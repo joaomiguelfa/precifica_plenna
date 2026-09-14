@@ -129,16 +129,19 @@ export default function LegalProfiles() {
         </div>
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {employees.map((e) => (
-            <li key={e.id} className="flex items-center justify-between py-2 text-sm">
+            <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <div>
                 <p className="font-medium text-slate-800 dark:text-slate-200">{e.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {LAWYER_ROLE_LABELS[e.role]} · {formatBRL(e.monthlyCost)}/mês
-                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{LAWYER_ROLE_LABELS[e.role]}</p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => deleteEmployeeProfile(e.id).then(refresh)}>
-                Remover
-              </Button>
+              <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                  {formatBRL(e.monthlyCost)}/mês
+                </span>
+                <Button variant="danger" size="sm" onClick={() => deleteEmployeeProfile(e.id).then(refresh)}>
+                  Remover
+                </Button>
+              </div>
             </li>
           ))}
           {employees.length === 0 && (
@@ -172,14 +175,16 @@ export default function LegalProfiles() {
         </div>
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {fixedCosts.map((f) => (
-            <li key={f.id} className="flex items-center justify-between py-2 text-sm">
-              <div>
-                <p className="font-medium text-slate-800 dark:text-slate-200">{f.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(f.monthlyCost)}/mês</p>
+            <li key={f.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <p className="font-medium text-slate-800 dark:text-slate-200">{f.name}</p>
+              <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                  {formatBRL(f.monthlyCost)}/mês
+                </span>
+                <Button variant="danger" size="sm" onClick={() => deleteFixedCostProfile(f.id).then(refresh)}>
+                  Remover
+                </Button>
               </div>
-              <Button variant="danger" size="sm" onClick={() => deleteFixedCostProfile(f.id).then(refresh)}>
-                Remover
-              </Button>
             </li>
           ))}
           {fixedCosts.length === 0 && (

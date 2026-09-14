@@ -67,7 +67,7 @@ export function RoleAllocationsEditor({ roles, assumptions, employees, onChange,
               </option>
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name} ({LAWYER_ROLE_LABELS[e.role]})
+                  {e.name} ({LAWYER_ROLE_LABELS[e.role]}) — {formatBRL(e.monthlyCost)}/mês
                 </option>
               ))}
             </select>
