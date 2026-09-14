@@ -3,10 +3,13 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '../supabase/client'
 import { onlyDigits } from '../validation/document'
 
+export type UserRole = 'admin' | 'user'
+
 export interface SellerProfile {
   fullName: string
   document: string
   email: string
+  role: UserRole
 }
 
 interface AuthContextValue {
@@ -14,6 +17,7 @@ interface AuthContextValue {
   user: User | null
   profile: SellerProfile | null
   loading: boolean
+  isAdmin: boolean
   /** true depois que o usuário abre o link de "esqueci minha senha" (sessão de recuperação). */
   passwordRecovery: boolean
   signUp: (params: { fullName: string; document: string; email: string; password: string }) => Promise<{ needsEmailConfirmation: boolean }>
@@ -56,12 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     supabase
       .from('pricing3d_profiles')
-      .select('full_name, document, email')
+      .select('full_name, document, email, role')
       .eq('id', userId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return
-        setProfile(data ? { fullName: data.full_name, document: data.document, email: data.email } : null)
+        setProfile(
+          data
+            ? {
+                fullName: data.full_name,
+                document: data.document,
+                email: data.email,
+                role: data.role === 'admin' ? 'admin' : 'user',
+              }
+            : null,
+        )
       })
     return () => {
       cancelled = true
@@ -119,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         profile,
         loading,
+        isAdmin: profile?.role === 'admin',
         passwordRecovery,
         signUp,
         signIn,

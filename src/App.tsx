@@ -1,6 +1,8 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import { AdminRoute } from './components/auth/AdminRoute'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { useAuth } from './lib/auth/AuthContext'
+import Admin from './pages/Admin'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
@@ -20,7 +22,8 @@ const navItems = [
 ]
 
 function Header() {
-  const { session, profile, signOut } = useAuth()
+  const { session, profile, isAdmin, signOut } = useAuth()
+  const items = isAdmin ? [...navItems, { to: '/admin', label: 'Administração', end: false }] : navItems
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -31,7 +34,7 @@ function Header() {
         </div>
         {session && (
           <nav className="-mx-2 flex flex-1 justify-end gap-1 overflow-x-auto">
-            {navItems.map((item) => (
+            {items.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -124,6 +127,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
               </ProtectedRoute>
             }
           />

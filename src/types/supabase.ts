@@ -115,7 +115,15 @@ export type Database = {
           total_production_cost?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pricing3d_priced_pieces_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pricing3d_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing3d_printer_profiles: {
         Row: {
@@ -157,6 +165,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          role: string
           updated_at: string
         }
         Insert: {
@@ -165,6 +174,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -173,6 +183,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -215,7 +226,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      pricing3d_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
