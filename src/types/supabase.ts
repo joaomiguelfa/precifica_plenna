@@ -85,6 +85,50 @@ export type Database = {
           },
         ]
       }
+      bbcs_priced_cases: {
+        Row: {
+          case_name: string
+          created_at: string
+          estimated_total_revenue: number | null
+          id: string
+          input: Json
+          result: Json
+          selected_models: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_name?: string
+          created_at?: string
+          estimated_total_revenue?: number | null
+          id?: string
+          input: Json
+          result: Json
+          selected_models?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          case_name?: string
+          created_at?: string
+          estimated_total_revenue?: number | null
+          id?: string
+          input?: Json
+          result?: Json
+          selected_models?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bbcs_priced_cases_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pricing3d_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing3d_accessory_profiles: {
         Row: {
           acquisition_cost: number

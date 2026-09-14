@@ -2,23 +2,75 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { listLegalCases, type PricedLegalCaseSummary } from '../lib/data/legalHistory'
 import { listPricedPieces, type PricedPieceSummary } from '../lib/data/history'
 import { formatBRL } from '../lib/format'
 import { useSegment } from '../lib/segment/SegmentContext'
+import { LEGAL_FEE_MODEL_LABELS } from '../types/legalPricing'
 
 function LegalDashboard() {
+  const [recent, setRecent] = useState<PricedLegalCaseSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    listLegalCases()
+      .then((cases) => setRecent(cases.slice(0, 5)))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar histórico.'))
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
-    <Card className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Precifique um novo honorário</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Escolha entre honorário por hora, fixo/recorrente, de êxito ou contratual avulso.
-        </p>
-      </div>
-      <Link to="/honorarios">
-        <Button>+ Nova precificação</Button>
-      </Link>
-    </Card>
+    <>
+      <Card className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Precifique um novo honorário</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Escolha entre honorário por hora, fixo/recorrente, de êxito ou contratual avulso — combine mais de um no
+            mesmo caso, se fizer sentido.
+          </p>
+        </div>
+        <Link to="/honorarios">
+          <Button>+ Nova precificação</Button>
+        </Link>
+      </Card>
+
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Orçamentos salvos recentemente</h2>
+          <Link to="/honorarios/historico" className="text-xs font-medium text-indigo-600 hover:underline">
+            Ver histórico completo
+          </Link>
+        </div>
+
+        {loading && <p className="text-sm text-slate-400 dark:text-slate-500">Carregando…</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {!loading && !error && recent.length === 0 && (
+          <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum orçamento salvo ainda.</p>
+        )}
+
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+          {recent.map((legalCase) => (
+            <li key={legalCase.id} className="flex items-center justify-between py-2 text-sm">
+              <div>
+                <Link
+                  to={`/honorarios/${legalCase.id}`}
+                  className="font-medium text-slate-800 hover:text-indigo-600 dark:text-slate-200 dark:hover:text-indigo-400"
+                >
+                  {legalCase.caseName}
+                </Link>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {legalCase.selectedModels.map((m) => LEGAL_FEE_MODEL_LABELS[m]).join(' + ')}
+                </p>
+              </div>
+              <span className="text-slate-500 dark:text-slate-400">
+                {legalCase.estimatedTotalRevenue != null ? formatBRL(legalCase.estimatedTotalRevenue) : '—'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </>
   )
 }
 

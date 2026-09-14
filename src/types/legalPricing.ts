@@ -4,9 +4,21 @@
  * mix de receita em 4 linhas de honorário, custo de hora técnica por cargo,
  * carga tributária efetiva, comissão sobre êxito e provisão para
  * cancelamentos/glosas.
+ *
+ * As 4 formas de honorário compartilham os mesmos dados de entrada do caso
+ * (profissionais/horas, custos diretos, rateio de custos fixos e margem) —
+ * um caso pode combinar mais de uma forma ao mesmo tempo (ex.: parte por
+ * hora + parte de êxito), cada uma calculada lado a lado.
  */
 
 export type LegalFeeModel = 'hourly' | 'recurring' | 'success' | 'adhoc'
+
+export const LEGAL_FEE_MODEL_LABELS: Record<LegalFeeModel, string> = {
+  hourly: 'Por hora',
+  recurring: 'Fixo/recorrente',
+  success: 'Êxito',
+  adhoc: 'Contratual avulso',
+}
 
 export type LawyerRole = 'socio' | 'associado_senior' | 'associado_junior' | 'estagiario' | 'paralegal'
 
@@ -55,6 +67,17 @@ export interface DirectCostItem {
 }
 
 // ---------------------------------------------------------------------------
+// Dados de custo compartilhados por todas as formas de honorário de um caso
+// ---------------------------------------------------------------------------
+
+export interface CaseCostInputs {
+  roles: RoleAllocation[]
+  directCosts: DirectCostItem[]
+  fixedCostAllocation: number
+  marginPercent: number
+}
+
+// ---------------------------------------------------------------------------
 // Resultado comum a qualquer modelo de honorário
 // ---------------------------------------------------------------------------
 
@@ -77,13 +100,6 @@ export interface FeeResult {
 // 1. Honorário por hora
 // ---------------------------------------------------------------------------
 
-export interface HourlyFeeInput {
-  roles: RoleAllocation[]
-  directCosts: DirectCostItem[]
-  fixedCostAllocation: number
-  marginPercent: number
-}
-
 export interface HourlyFeeResult extends FeeResult {
   totalHours: number
   effectiveHourlyRate: number | null
@@ -93,28 +109,17 @@ export interface HourlyFeeResult extends FeeResult {
 // 2. Honorário fixo/recorrente (mensalidade / iguala)
 // ---------------------------------------------------------------------------
 
-export interface RecurringFeeInput {
-  roles: RoleAllocation[]
-  monthlyDirectCosts: DirectCostItem[]
-  fixedCostAllocation: number
-  marginPercent: number
-}
-
 export type RecurringFeeResult = FeeResult
 
 // ---------------------------------------------------------------------------
 // 3. Honorário de êxito (success fee)
 // ---------------------------------------------------------------------------
 
-export interface SuccessFeeInput {
+export interface SuccessFeeExtra {
   /** Valor da causa / proveito econômico estimado, em R$. */
   caseValue: number
   /** Probabilidade estimada de êxito (0-100). */
   successProbabilityPercent: number
-  roles: RoleAllocation[]
-  directCosts: DirectCostItem[]
-  fixedCostAllocation: number
-  marginPercent: number
 }
 
 export interface SuccessFeeResult extends FeeResult {
@@ -130,27 +135,41 @@ export interface SuccessFeeResult extends FeeResult {
 // 4. Honorário contratual avulso (serviço pontual)
 // ---------------------------------------------------------------------------
 
-export interface AdhocFeeInput {
-  serviceName: string
-  roles: RoleAllocation[]
-  directCosts: DirectCostItem[]
-  fixedCostAllocation: number
-  marginPercent: number
-}
-
 export type AdhocFeeResult = FeeResult
 
 // ---------------------------------------------------------------------------
-// Input combinado (um por modelo, para a UI trocar de aba sem perder dados)
+// Input e resultado combinados do caso (as 4 formas podem ser usadas juntas)
 // ---------------------------------------------------------------------------
 
 export interface LegalPricingInput {
   /** Nome do processo/caso — equivalente ao "nome da peça" do Precifica3D. */
   caseName: string
-  selectedModel: LegalFeeModel
+  /** Formas de honorário aplicadas a este caso — pode ser mais de uma. */
+  selectedModels: LegalFeeModel[]
   assumptions: PracticeAssumptions
-  hourly: HourlyFeeInput
-  recurring: RecurringFeeInput
-  success: SuccessFeeInput
-  adhoc: AdhocFeeInput
+  /** Profissionais/horas do caso — compartilhado por todas as formas selecionadas. */
+  roles: RoleAllocation[]
+  /** Custos diretos do caso — compartilhado por todas as formas selecionadas. */
+  directCosts: DirectCostItem[]
+  fixedCostAllocation: number
+  marginPercent: number
+  /** Usado somente quando "Êxito" está selecionado. */
+  caseValue: number
+  successProbabilityPercent: number
+  /** Usado somente quando "Contratual avulso" está selecionado. */
+  serviceName: string
+}
+
+export interface CombinedLegalResult {
+  hourly: HourlyFeeResult | null
+  recurring: RecurringFeeResult | null
+  success: SuccessFeeResult | null
+  adhoc: AdhocFeeResult | null
+  /**
+   * Soma do preço fixo de cada forma selecionada (hora/recorrente/avulso) com
+   * o valor esperado (ponderado pela probabilidade) do componente de êxito,
+   * quando aplicável — uma estimativa única de receita do caso como um todo,
+   * sem tratar o componente de êxito como se fosse garantido.
+   */
+  estimatedTotalRevenue: number | null
 }

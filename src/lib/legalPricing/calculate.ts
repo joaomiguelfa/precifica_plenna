@@ -1,17 +1,16 @@
 import type {
-  AdhocFeeInput,
   AdhocFeeResult,
+  CaseCostInputs,
+  CombinedLegalResult,
   DirectCostItem,
   FeeCostBreakdown,
-  HourlyFeeInput,
   HourlyFeeResult,
   LawyerRole,
   LegalPricingInput,
   PracticeAssumptions,
-  RecurringFeeInput,
   RecurringFeeResult,
   RoleAllocation,
-  SuccessFeeInput,
+  SuccessFeeExtra,
   SuccessFeeResult,
 } from '../../types/legalPricing'
 
@@ -54,6 +53,14 @@ function buildCostBreakdown(labor: number, direct: number, fixedAllocation: numb
   }
 }
 
+function costBreakdownFor(inputs: CaseCostInputs, assumptions: PracticeAssumptions): FeeCostBreakdown {
+  return buildCostBreakdown(
+    laborCost(inputs.roles, assumptions),
+    directCostTotal(inputs.directCosts),
+    inputs.fixedCostAllocation,
+  )
+}
+
 /**
  * Núcleo comum a honorário por hora, fixo/recorrente e avulso: preço que
  * cobre custo + margem + carga tributária + provisão de inadimplência,
@@ -84,15 +91,13 @@ function priceFromCostAndRates(
 // 1. Honorário por hora
 // ---------------------------------------------------------------------------
 
-export function calculateHourlyFee(input: HourlyFeeInput, assumptions: PracticeAssumptions): HourlyFeeResult {
-  const totalHours = input.roles.reduce((sum, r) => sum + r.hours, 0)
-  const labor = laborCost(input.roles, assumptions)
-  const direct = directCostTotal(input.directCosts)
-  const costBreakdown = buildCostBreakdown(labor, direct, input.fixedCostAllocation)
+export function calculateHourlyFee(inputs: CaseCostInputs, assumptions: PracticeAssumptions): HourlyFeeResult {
+  const totalHours = inputs.roles.reduce((sum, r) => sum + r.hours, 0)
+  const costBreakdown = costBreakdownFor(inputs, assumptions)
 
   const { price, isValid, warning } = priceFromCostAndRates(
     costBreakdown.totalCost,
-    input.marginPercent,
+    inputs.marginPercent,
     assumptions.taxBurdenPercent,
     assumptions.writeOffPercent,
   )
@@ -111,18 +116,14 @@ export function calculateHourlyFee(input: HourlyFeeInput, assumptions: PracticeA
 // 2. Honorário fixo/recorrente
 // ---------------------------------------------------------------------------
 
-export function calculateRecurringFee(input: RecurringFeeInput, assumptions: PracticeAssumptions): RecurringFeeResult {
-  const labor = laborCost(input.roles, assumptions)
-  const direct = directCostTotal(input.monthlyDirectCosts)
-  const costBreakdown = buildCostBreakdown(labor, direct, input.fixedCostAllocation)
-
+export function calculateRecurringFee(inputs: CaseCostInputs, assumptions: PracticeAssumptions): RecurringFeeResult {
+  const costBreakdown = costBreakdownFor(inputs, assumptions)
   const { price, isValid, warning } = priceFromCostAndRates(
     costBreakdown.totalCost,
-    input.marginPercent,
+    inputs.marginPercent,
     assumptions.taxBurdenPercent,
     assumptions.writeOffPercent,
   )
-
   return { costBreakdown, price, isValid, warning }
 }
 
@@ -130,11 +131,12 @@ export function calculateRecurringFee(input: RecurringFeeInput, assumptions: Pra
 // 3. Honorário de êxito
 // ---------------------------------------------------------------------------
 
-export function calculateSuccessFee(input: SuccessFeeInput, assumptions: PracticeAssumptions): SuccessFeeResult {
-  const labor = laborCost(input.roles, assumptions)
-  const direct = directCostTotal(input.directCosts)
-  const costBreakdown = buildCostBreakdown(labor, direct, input.fixedCostAllocation)
-  const probability = input.successProbabilityPercent / 100
+export function calculateSuccessFee(
+  inputs: CaseCostInputs & SuccessFeeExtra,
+  assumptions: PracticeAssumptions,
+): SuccessFeeResult {
+  const costBreakdown = costBreakdownFor(inputs, assumptions)
+  const probability = inputs.successProbabilityPercent / 100
 
   if (probability <= 0) {
     return {
@@ -154,7 +156,7 @@ export function calculateSuccessFee(input: SuccessFeeInput, assumptions: Practic
   // quando se ganha precisa ser dividido tanto pela probabilidade de êxito
   // quanto pelo que sobra depois de margem, tributo e comissão — cobrindo,
   // em valor esperado, o custo de todos os casos (ganhos e perdidos).
-  const totalPercent = input.marginPercent + assumptions.taxBurdenPercent + assumptions.successCommissionPercent
+  const totalPercent = inputs.marginPercent + assumptions.taxBurdenPercent + assumptions.successCommissionPercent
   const denominator = probability * (1 - totalPercent / 100)
 
   if (denominator <= 0) {
@@ -172,7 +174,7 @@ export function calculateSuccessFee(input: SuccessFeeInput, assumptions: Practic
 
   const amountIfWon = round2(costBreakdown.totalCost / denominator)
   const expectedValue = round2(amountIfWon * probability)
-  const suggestedFeePercent = input.caseValue > 0 ? round2((amountIfWon / input.caseValue) * 100) : null
+  const suggestedFeePercent = inputs.caseValue > 0 ? round2((amountIfWon / inputs.caseValue) * 100) : null
 
   let warning: string | null = null
   if (suggestedFeePercent != null && suggestedFeePercent > 30) {
@@ -195,19 +197,57 @@ export function calculateSuccessFee(input: SuccessFeeInput, assumptions: Practic
 // 4. Honorário contratual avulso
 // ---------------------------------------------------------------------------
 
-export function calculateAdhocFee(input: AdhocFeeInput, assumptions: PracticeAssumptions): AdhocFeeResult {
-  const labor = laborCost(input.roles, assumptions)
-  const direct = directCostTotal(input.directCosts)
-  const costBreakdown = buildCostBreakdown(labor, direct, input.fixedCostAllocation)
-
+export function calculateAdhocFee(inputs: CaseCostInputs, assumptions: PracticeAssumptions): AdhocFeeResult {
+  const costBreakdown = costBreakdownFor(inputs, assumptions)
   const { price, isValid, warning } = priceFromCostAndRates(
     costBreakdown.totalCost,
-    input.marginPercent,
+    inputs.marginPercent,
     assumptions.taxBurdenPercent,
     assumptions.writeOffPercent,
   )
-
   return { costBreakdown, price, isValid, warning }
+}
+
+// ---------------------------------------------------------------------------
+// Combinação: um caso pode usar mais de uma forma de honorário ao mesmo
+// tempo (ex.: parte por hora + parte de êxito), todas alimentadas pelos
+// mesmos dados de custo do caso.
+// ---------------------------------------------------------------------------
+
+export function calculateSelectedModels(input: LegalPricingInput): CombinedLegalResult {
+  const caseCostInputs: CaseCostInputs = {
+    roles: input.roles,
+    directCosts: input.directCosts,
+    fixedCostAllocation: input.fixedCostAllocation,
+    marginPercent: input.marginPercent,
+  }
+
+  const hourly = input.selectedModels.includes('hourly') ? calculateHourlyFee(caseCostInputs, input.assumptions) : null
+  const recurring = input.selectedModels.includes('recurring')
+    ? calculateRecurringFee(caseCostInputs, input.assumptions)
+    : null
+  const adhoc = input.selectedModels.includes('adhoc') ? calculateAdhocFee(caseCostInputs, input.assumptions) : null
+  const success = input.selectedModels.includes('success')
+    ? calculateSuccessFee(
+        { ...caseCostInputs, caseValue: input.caseValue, successProbabilityPercent: input.successProbabilityPercent },
+        input.assumptions,
+      )
+    : null
+
+  let total = 0
+  let hasAny = false
+  for (const flat of [hourly, recurring, adhoc]) {
+    if (flat && flat.isValid && flat.price != null) {
+      total += flat.price
+      hasAny = true
+    }
+  }
+  if (success && success.isValid && success.expectedValue != null) {
+    total += success.expectedValue
+    hasAny = true
+  }
+
+  return { hourly, recurring, success, adhoc, estimatedTotalRevenue: hasAny ? round2(total) : null }
 }
 
 // ---------------------------------------------------------------------------
@@ -235,34 +275,14 @@ export function createDefaultPracticeAssumptions(): PracticeAssumptions {
 export function createDefaultLegalPricingInput(): LegalPricingInput {
   return {
     caseName: '',
-    selectedModel: 'hourly',
+    selectedModels: ['hourly'],
     assumptions: createDefaultPracticeAssumptions(),
-    hourly: {
-      roles: [],
-      directCosts: [],
-      fixedCostAllocation: 0,
-      marginPercent: 20,
-    },
-    recurring: {
-      roles: [],
-      monthlyDirectCosts: [],
-      fixedCostAllocation: 0,
-      marginPercent: 20,
-    },
-    success: {
-      caseValue: 0,
-      successProbabilityPercent: 50,
-      roles: [],
-      directCosts: [],
-      fixedCostAllocation: 0,
-      marginPercent: 20,
-    },
-    adhoc: {
-      serviceName: '',
-      roles: [],
-      directCosts: [],
-      fixedCostAllocation: 0,
-      marginPercent: 20,
-    },
+    roles: [],
+    directCosts: [],
+    fixedCostAllocation: 0,
+    marginPercent: 20,
+    caseValue: 0,
+    successProbabilityPercent: 50,
+    serviceName: '',
   }
 }

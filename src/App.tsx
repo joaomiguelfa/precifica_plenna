@@ -9,6 +9,7 @@ import CompleteProfile from './pages/CompleteProfile'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
+import LegalHistory from './pages/LegalHistory'
 import LegalProfiles from './pages/LegalProfiles'
 import Login from './pages/Login'
 import NewLegalPricing from './pages/NewLegalPricing'
@@ -28,8 +29,9 @@ const navItemsBySegment: Record<BusinessSegment, { to: string; label: string; en
   ],
   bbcs_advocacia: [
     { to: '/', label: 'Início', end: true },
-    { to: '/honorarios', label: 'Nova precificação', end: false },
+    { to: '/honorarios', label: 'Nova precificação', end: true },
     { to: '/honorarios/perfis', label: 'Perfis salvos', end: false },
+    { to: '/honorarios/historico', label: 'Histórico', end: false },
   ],
 }
 
@@ -201,10 +203,26 @@ function App() {
             }
           />
           <Route
+            path="/honorarios/:caseId"
+            element={
+              <ProtectedRoute>
+                <NewLegalPricing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/honorarios/perfis"
             element={
               <ProtectedRoute>
                 <LegalProfiles />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/honorarios/historico"
+            element={
+              <ProtectedRoute>
+                <LegalHistory />
               </ProtectedRoute>
             }
           />

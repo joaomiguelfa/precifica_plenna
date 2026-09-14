@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
-import { AdhocFeeForm } from '../components/legal/AdhocFeeForm'
-import { HourlyFeeForm } from '../components/legal/HourlyFeeForm'
+import { useParams } from 'react-router-dom'
+import { DirectCostsEditor } from '../components/legal/DirectCostsEditor'
+import { FeeResultCard } from '../components/legal/FeeResultCard'
+import { FixedCostAllocationField } from '../components/legal/FixedCostAllocationField'
+import { HourlyFeeResultCard } from '../components/legal/HourlyFeeResultCard'
 import { PracticeAssumptionsPanel } from '../components/legal/PracticeAssumptionsPanel'
-import { RecurringFeeForm } from '../components/legal/RecurringFeeForm'
-import { SuccessFeeForm } from '../components/legal/SuccessFeeForm'
+import { RoleAllocationsEditor } from '../components/legal/RoleAllocationsEditor'
+import { SuccessFeeResultCard } from '../components/legal/SuccessFeeResultCard'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
 import { useLocalStorageState } from '../hooks/useLocalStorageState'
 import { useAuth } from '../lib/auth/AuthContext'
@@ -14,32 +19,81 @@ import {
   type EmployeeProfile,
   type FixedCostProfile,
 } from '../lib/data/legalProfiles'
-import { createDefaultLegalPricingInput } from '../lib/legalPricing/calculate'
+import { getLegalCase, saveLegalCase } from '../lib/data/legalHistory'
+import { formatBRL } from '../lib/format'
+import { calculateSelectedModels, createDefaultLegalPricingInput } from '../lib/legalPricing/calculate'
+import { LEGAL_FEE_MODEL_LABELS } from '../types/legalPricing'
 import type { LegalFeeModel, LegalPricingInput } from '../types/legalPricing'
 
-const MODEL_TABS: { id: LegalFeeModel; label: string }[] = [
-  { id: 'hourly', label: 'Por hora' },
-  { id: 'recurring', label: 'Fixo/recorrente' },
-  { id: 'success', label: 'Êxito' },
-  { id: 'adhoc', label: 'Contratual avulso' },
-]
+const MODEL_OPTIONS = Object.entries(LEGAL_FEE_MODEL_LABELS) as [LegalFeeModel, string][]
 
 export default function NewLegalPricing() {
+  const { caseId } = useParams()
   const { user } = useAuth()
-  const draftKey = `precificacao3d:legal-draft:${user?.id ?? 'anon'}`
+  // v2: o formato do rascunho mudou (formas de honorário combináveis, dados
+  // de custo compartilhados) — chave nova para não tentar reidratar um
+  // rascunho antigo com o formato incompatível.
+  const draftKey = `precificacao3d:legal-draft-v2:${user?.id ?? 'anon'}`
   const [input, setInput] = useLocalStorageState<LegalPricingInput>(draftKey, createDefaultLegalPricingInput)
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
   useEffect(() => {
     listEmployeeProfiles().then(setEmployees).catch(() => {})
     listFixedCostProfiles().then(setFixedCosts).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (!caseId) return
+    getLegalCase(caseId)
+      .then((legalCase) => setInput(legalCase.input))
+      .catch(() => {})
+  }, [caseId, setInput])
+
+  function toggleModel(model: LegalFeeModel) {
+    setInput((prev) => {
+      const isSelected = prev.selectedModels.includes(model)
+      const selectedModels = isSelected
+        ? prev.selectedModels.filter((m) => m !== model)
+        : [...prev.selectedModels, model]
+      return { ...prev, selectedModels }
+    })
+  }
+
   function resetForm() {
     if (!confirm('Isso vai limpar todos os campos do cálculo atual. Continuar?')) return
     setInput(createDefaultLegalPricingInput())
+    setSaveMessage(null)
   }
+
+  async function handleSaveHistory() {
+    setSaving(true)
+    setSaveMessage(null)
+    try {
+      await saveLegalCase(input, results)
+      setSaveMessage('Orçamento salvo no histórico.')
+    } catch (err) {
+      setSaveMessage(err instanceof Error ? `Erro ao salvar: ${err.message}` : 'Erro ao salvar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const results = calculateSelectedModels(input)
+  const hoursLabel =
+    input.selectedModels.length === 1 && input.selectedModels[0] === 'recurring'
+      ? 'Horas/mês estimadas'
+      : 'Horas estimadas'
+  const resultCards = [
+    results.hourly && <HourlyFeeResultCard key="hourly" result={results.hourly} />,
+    results.recurring && (
+      <FeeResultCard key="recurring" result={results.recurring} priceLabel="Honorário fixo mensal sugerido" />
+    ),
+    results.success && <SuccessFeeResultCard key="success" result={results.success} />,
+    results.adhoc && <FeeResultCard key="adhoc" result={results.adhoc} priceLabel="Valor fechado sugerido" />,
+  ].filter(Boolean)
 
   return (
     <div className="space-y-4">
@@ -49,7 +103,7 @@ export default function NewLegalPricing() {
             Nova precificação — BBCS Advocacia
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Escolha a forma de cobrança do serviço. Os valores são calculados em tempo real.
+            Os valores são calculados em tempo real. Combine mais de uma forma de honorário no mesmo caso, se fizer sentido.
           </p>
         </div>
         <button
@@ -77,59 +131,122 @@ export default function NewLegalPricing() {
         />
       </Card>
 
-      <div className="flex flex-wrap gap-1 rounded-md border border-slate-300 p-1 text-sm dark:border-slate-700">
-        {MODEL_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setInput({ ...input, selectedModel: tab.id })}
-            className={`flex-1 rounded px-3 py-1.5 font-medium transition-colors ${
-              input.selectedModel === tab.id
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Card className="p-4">
+        <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Formas de honorário aplicadas a este caso
+        </h2>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+          Selecione uma ou mais. Os dados abaixo (profissionais/horas, custos diretos, rateio e margem) são únicos
+          para o caso e alimentam todas as formas marcadas.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {MODEL_OPTIONS.map(([id, label]) => {
+            const active = input.selectedModels.includes(id)
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => toggleModel(id)}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                    : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+                }`}
+              >
+                {active ? '✓ ' : ''}
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
 
-      {input.selectedModel === 'hourly' && (
-        <HourlyFeeForm
-          input={input.hourly}
+      <Card className="p-4 space-y-4">
+        <RoleAllocationsEditor
+          roles={input.roles}
           assumptions={input.assumptions}
           employees={employees}
-          fixedCosts={fixedCosts}
-          onChange={(hourly) => setInput({ ...input, hourly })}
+          onChange={(roles) => setInput({ ...input, roles })}
+          hoursLabel={hoursLabel}
         />
+        <DirectCostsEditor items={input.directCosts} onChange={(directCosts) => setInput({ ...input, directCosts })} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FixedCostAllocationField
+            value={input.fixedCostAllocation}
+            fixedCosts={fixedCosts}
+            onChange={(v) => setInput({ ...input, fixedCostAllocation: v })}
+          />
+          <NumberField
+            label="Margem de lucro desejada"
+            suffix="%"
+            value={input.marginPercent}
+            onChange={(v) => setInput({ ...input, marginPercent: v })}
+          />
+        </div>
+      </Card>
+
+      {input.selectedModels.includes('success') && (
+        <Card className="p-4">
+          <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Dados do honorário de êxito</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <NumberField
+              label="Valor da causa / proveito econômico"
+              suffix="R$"
+              value={input.caseValue}
+              onChange={(v) => setInput({ ...input, caseValue: v })}
+            />
+            <NumberField
+              label="Probabilidade de êxito"
+              suffix="%"
+              value={input.successProbabilityPercent}
+              onChange={(v) => setInput({ ...input, successProbabilityPercent: v })}
+            />
+          </div>
+        </Card>
       )}
-      {input.selectedModel === 'recurring' && (
-        <RecurringFeeForm
-          input={input.recurring}
-          assumptions={input.assumptions}
-          employees={employees}
-          fixedCosts={fixedCosts}
-          onChange={(recurring) => setInput({ ...input, recurring })}
-        />
+
+      {input.selectedModels.includes('adhoc') && (
+        <Card className="p-4">
+          <TextField
+            label="Nome do serviço (contratual avulso)"
+            value={input.serviceName}
+            onChange={(v) => setInput({ ...input, serviceName: v })}
+            placeholder="Ex.: Elaboração de contrato de prestação de serviços"
+          />
+        </Card>
       )}
-      {input.selectedModel === 'success' && (
-        <SuccessFeeForm
-          input={input.success}
-          assumptions={input.assumptions}
-          employees={employees}
-          fixedCosts={fixedCosts}
-          onChange={(success) => setInput({ ...input, success })}
-        />
+
+      {resultCards.length === 0 && (
+        <p className="text-sm text-slate-400 dark:text-slate-500">
+          Selecione ao menos uma forma de honorário acima para ver o resultado.
+        </p>
       )}
-      {input.selectedModel === 'adhoc' && (
-        <AdhocFeeForm
-          input={input.adhoc}
-          assumptions={input.assumptions}
-          employees={employees}
-          fixedCosts={fixedCosts}
-          onChange={(adhoc) => setInput({ ...input, adhoc })}
-        />
+
+      {resultCards.length > 0 && (
+        <div className={`grid grid-cols-1 gap-4 ${resultCards.length > 1 ? 'lg:grid-cols-2' : ''}`}>{resultCards}</div>
       )}
+
+      {resultCards.length > 1 && results.estimatedTotalRevenue != null && (
+        <Card className="border-indigo-300 p-5 dark:border-indigo-700">
+          <p className="text-xs font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
+            Receita total estimada do caso (formas combinadas)
+          </p>
+          <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+            {formatBRL(results.estimatedTotalRevenue)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Soma o valor fixo de cada forma selecionada (por hora, fixo/recorrente, avulso) com o valor esperado —
+            ponderado pela probabilidade — do componente de êxito, quando aplicável.
+          </p>
+        </Card>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={handleSaveHistory} disabled={saving || resultCards.length === 0}>
+          {saving ? 'Salvando…' : 'Salvar orçamento no histórico'}
+        </Button>
+        {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
+      </div>
     </div>
   )
 }

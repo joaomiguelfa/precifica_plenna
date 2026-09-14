@@ -3,12 +3,20 @@ import {
   calculateAdhocFee,
   calculateHourlyFee,
   calculateRecurringFee,
+  calculateSelectedModels,
   calculateSuccessFee,
+  createDefaultLegalPricingInput,
   createDefaultPracticeAssumptions,
   hourlyCostForRole,
   round2,
 } from './calculate'
-import type { DirectCostItem, PracticeAssumptions, RoleAllocation } from '../../types/legalPricing'
+import type {
+  CaseCostInputs,
+  DirectCostItem,
+  LegalPricingInput,
+  PracticeAssumptions,
+  RoleAllocation,
+} from '../../types/legalPricing'
 
 function role(
   id: string,
@@ -21,6 +29,10 @@ function role(
 
 function directCost(id: string, name: string, cost: number): DirectCostItem {
   return { id, name, cost }
+}
+
+function caseInputs(overrides: Partial<CaseCostInputs> = {}): CaseCostInputs {
+  return { roles: [], directCosts: [], fixedCostAllocation: 0, marginPercent: 20, ...overrides }
 }
 
 describe('hourlyCostForRole', () => {
@@ -53,12 +65,12 @@ describe('calculateHourlyFee', () => {
 
   it('calcula custo de mão de obra + custos diretos e aplica margem sobre o preço', () => {
     const result = calculateHourlyFee(
-      {
+      caseInputs({
         roles: [role('1', 'associado_senior', 10)],
         directCosts: [directCost('1', 'Custas processuais', 200)],
         fixedCostAllocation: 50,
         marginPercent: 20,
-      },
+      }),
       { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0 },
     )
 
@@ -77,12 +89,7 @@ describe('calculateHourlyFee', () => {
 
   it('soma tributos e provisão de inadimplência à margem na mesma fórmula (margem sobre o preço)', () => {
     const result = calculateHourlyFee(
-      {
-        roles: [],
-        directCosts: [directCost('1', 'Insumo', 100)],
-        fixedCostAllocation: 0,
-        marginPercent: 20,
-      },
+      caseInputs({ directCosts: [directCost('1', 'Insumo', 100)], marginPercent: 20 }),
       { ...assumptions, taxBurdenPercent: 15, writeOffPercent: 10 },
     )
     // custo=100; preço = 100 / (1 - 0.20 - 0.15 - 0.10) = 100/0.55
@@ -91,12 +98,7 @@ describe('calculateHourlyFee', () => {
 
   it('usa o custo mensal individual de um funcionário salvo em vez do custo padrão do cargo', () => {
     const result = calculateHourlyFee(
-      {
-        roles: [role('1', 'associado_senior', 10, 22000)],
-        directCosts: [],
-        fixedCostAllocation: 0,
-        marginPercent: 0,
-      },
+      caseInputs({ roles: [role('1', 'associado_senior', 10, 22000)], marginPercent: 0 }),
       { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0 },
     )
     const expectedLabor = 10 * (22000 / (176 * 0.65))
@@ -105,12 +107,7 @@ describe('calculateHourlyFee', () => {
 
   it('marca como inválido quando margem+tributos+provisão somam 100% ou mais', () => {
     const result = calculateHourlyFee(
-      {
-        roles: [],
-        directCosts: [directCost('1', 'Insumo', 100)],
-        fixedCostAllocation: 0,
-        marginPercent: 60,
-      },
+      caseInputs({ directCosts: [directCost('1', 'Insumo', 100)], marginPercent: 60 }),
       { ...assumptions, taxBurdenPercent: 30, writeOffPercent: 15 },
     )
     expect(result.isValid).toBe(false)
@@ -123,12 +120,7 @@ describe('calculateRecurringFee', () => {
   it('usa a mesma fórmula de custo+margem, para um pacote mensal de horas', () => {
     const assumptions = createDefaultPracticeAssumptions()
     const result = calculateRecurringFee(
-      {
-        roles: [role('1', 'associado_junior', 20)],
-        monthlyDirectCosts: [],
-        fixedCostAllocation: 300,
-        marginPercent: 25,
-      },
+      caseInputs({ roles: [role('1', 'associado_junior', 20)], fixedCostAllocation: 300, marginPercent: 25 }),
       { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0 },
     )
     const expectedLabor = 20 * hourlyCostForRole('associado_junior', assumptions)
@@ -140,16 +132,11 @@ describe('calculateRecurringFee', () => {
 describe('calculateAdhocFee', () => {
   it('calcula um valor fechado para um serviço pontual', () => {
     const assumptions = createDefaultPracticeAssumptions()
-    const result = calculateAdhocFee(
-      {
-        serviceName: 'Parecer jurídico',
-        roles: [role('1', 'socio', 3)],
-        directCosts: [],
-        fixedCostAllocation: 0,
-        marginPercent: 30,
-      },
-      { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0 },
-    )
+    const result = calculateAdhocFee(caseInputs({ roles: [role('1', 'socio', 3)], marginPercent: 30 }), {
+      ...assumptions,
+      taxBurdenPercent: 0,
+      writeOffPercent: 0,
+    })
     const expectedLabor = 3 * hourlyCostForRole('socio', assumptions)
     expect(result.price).toBeCloseTo(expectedLabor / 0.7, 0)
   })
@@ -161,12 +148,9 @@ describe('calculateSuccessFee', () => {
   it('sugere um percentual sobre o valor da causa que cobre custo, margem, tributo e comissão de êxito, ajustado pela probabilidade', () => {
     const result = calculateSuccessFee(
       {
+        ...caseInputs({ roles: [role('1', 'associado_senior', 40)], directCosts: [directCost('1', 'Custas', 500)], marginPercent: 20 }),
         caseValue: 100000,
         successProbabilityPercent: 50,
-        roles: [role('1', 'associado_senior', 40)],
-        directCosts: [directCost('1', 'Custas', 500)],
-        fixedCostAllocation: 0,
-        marginPercent: 20,
       },
       { ...assumptions, taxBurdenPercent: 10 },
     )
@@ -184,28 +168,15 @@ describe('calculateSuccessFee', () => {
   })
 
   it('exige um percentual maior quanto menor a probabilidade de êxito, para o mesmo caso', () => {
-    const caseInput = {
-      caseValue: 100000,
-      roles: [role('1', 'associado_senior', 40)],
-      directCosts: [directCost('1', 'Custas', 500)],
-      fixedCostAllocation: 0,
-      marginPercent: 20,
-    }
-    const highProbability = calculateSuccessFee({ ...caseInput, successProbabilityPercent: 80 }, assumptions)
-    const lowProbability = calculateSuccessFee({ ...caseInput, successProbabilityPercent: 20 }, assumptions)
+    const base = caseInputs({ roles: [role('1', 'associado_senior', 40)], directCosts: [directCost('1', 'Custas', 500)], marginPercent: 20 })
+    const highProbability = calculateSuccessFee({ ...base, caseValue: 100000, successProbabilityPercent: 80 }, assumptions)
+    const lowProbability = calculateSuccessFee({ ...base, caseValue: 100000, successProbabilityPercent: 20 }, assumptions)
     expect(lowProbability.suggestedFeePercent!).toBeGreaterThan(highProbability.suggestedFeePercent!)
   })
 
   it('avisa quando o percentual sugerido ultrapassa 30% do valor da causa', () => {
     const result = calculateSuccessFee(
-      {
-        caseValue: 5000,
-        successProbabilityPercent: 50,
-        roles: [role('1', 'socio', 20)],
-        directCosts: [],
-        fixedCostAllocation: 0,
-        marginPercent: 20,
-      },
+      { ...caseInputs({ roles: [role('1', 'socio', 20)], marginPercent: 20 }), caseValue: 5000, successProbabilityPercent: 50 },
       assumptions,
     )
     expect(result.suggestedFeePercent).toBeGreaterThan(30)
@@ -214,16 +185,57 @@ describe('calculateSuccessFee', () => {
 
   it('avisa quando a probabilidade de êxito é zero', () => {
     const result = calculateSuccessFee(
-      {
-        caseValue: 100000,
-        successProbabilityPercent: 0,
-        roles: [],
-        directCosts: [directCost('1', 'x', 100)],
-        fixedCostAllocation: 0,
-        marginPercent: 20,
-      },
+      { ...caseInputs({ directCosts: [directCost('1', 'x', 100)], marginPercent: 20 }), caseValue: 100000, successProbabilityPercent: 0 },
       assumptions,
     )
     expect(result.warning).toMatch(/probabilidade/)
+  })
+})
+
+describe('calculateSelectedModels', () => {
+  const assumptions = createDefaultPracticeAssumptions()
+
+  it('calcula somente as formas selecionadas, deixando as demais nulas', () => {
+    const input: LegalPricingInput = {
+      ...createDefaultLegalPricingInput(),
+      assumptions,
+      selectedModels: ['hourly'],
+      roles: [role('1', 'socio', 10)],
+    }
+    const result = calculateSelectedModels(input)
+    expect(result.hourly).not.toBeNull()
+    expect(result.recurring).toBeNull()
+    expect(result.success).toBeNull()
+    expect(result.adhoc).toBeNull()
+  })
+
+  it('soma o preço fixo de uma forma com o valor esperado do componente de êxito na receita total estimada', () => {
+    const input: LegalPricingInput = {
+      ...createDefaultLegalPricingInput(),
+      assumptions,
+      selectedModels: ['hourly', 'success'],
+      roles: [role('1', 'associado_senior', 10)],
+      caseValue: 100000,
+      successProbabilityPercent: 50,
+    }
+    const result = calculateSelectedModels(input)
+    expect(result.hourly).not.toBeNull()
+    expect(result.success).not.toBeNull()
+    expect(result.hourly!.price).not.toBeNull()
+    expect(result.success!.expectedValue).not.toBeNull()
+    expect(result.estimatedTotalRevenue).toBeCloseTo(result.hourly!.price! + result.success!.expectedValue!, 0)
+  })
+
+  it('retorna receita total nula quando nenhuma forma selecionada é válida', () => {
+    const input: LegalPricingInput = {
+      ...createDefaultLegalPricingInput(),
+      assumptions,
+      selectedModels: ['success'],
+      caseValue: 100000,
+      successProbabilityPercent: 0,
+    }
+    const result = calculateSelectedModels(input)
+    expect(result.success!.isValid).toBe(false)
+    expect(result.estimatedTotalRevenue).toBeNull()
   })
 })
