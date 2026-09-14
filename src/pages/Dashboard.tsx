@@ -4,8 +4,25 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { listPricedPieces, type PricedPieceSummary } from '../lib/data/history'
 import { formatBRL } from '../lib/format'
+import { useSegment } from '../lib/segment/SegmentContext'
 
-export default function Dashboard() {
+function LegalDashboard() {
+  return (
+    <Card className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Precifique um novo honorário</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Escolha entre honorário por hora, fixo/recorrente, de êxito ou contratual avulso.
+        </p>
+      </div>
+      <Link to="/honorarios">
+        <Button>+ Nova precificação</Button>
+      </Link>
+    </Card>
+  )
+}
+
+function PrintingDashboard() {
   const [recent, setRecent] = useState<PricedPieceSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +35,7 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    <>
       <Card className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Precifique sua próxima peça</h1>
@@ -59,6 +76,11 @@ export default function Dashboard() {
           ))}
         </ul>
       </Card>
-    </div>
+    </>
   )
+}
+
+export default function Dashboard() {
+  const { segment } = useSegment()
+  return <div className="space-y-6">{segment === 'bbcs_advocacia' ? <LegalDashboard /> : <PrintingDashboard />}</div>
 }

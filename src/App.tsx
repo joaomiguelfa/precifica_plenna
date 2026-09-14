@@ -73,14 +73,33 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-          <span aria-hidden="true">{segment === 'bbcs_advocacia' ? '⚖️' : '🖨️'}</span>
-          <span>Precifica.Plenna</span>
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <span aria-hidden="true">{segment === 'bbcs_advocacia' ? '⚖️' : '🖨️'}</span>
+            <span>Precifica.Plenna</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {session && profileComplete && <SegmentSelect />}
+            <ThemeToggle />
+            {session && (
+              <div className="flex items-center gap-3 border-l border-slate-200 pl-3 text-sm dark:border-slate-800">
+                <span className="hidden text-slate-600 sm:inline dark:text-slate-400">
+                  {profile?.fullName || session.user.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="rounded-md px-2 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        {session && profileComplete && <SegmentSelect />}
         {session && profileComplete && (
-          <nav className="-mx-2 flex flex-1 justify-end gap-1 overflow-x-auto">
+          <nav className="-mx-1 flex flex-wrap gap-1">
             {items.map((item) => (
               <NavLink
                 key={item.to}
@@ -99,23 +118,6 @@ function Header() {
             ))}
           </nav>
         )}
-        <div className="flex shrink-0 items-center gap-1">
-          <ThemeToggle />
-          {session && (
-            <div className="flex items-center gap-3 border-l border-slate-200 pl-3 text-sm dark:border-slate-800">
-              <span className="hidden text-slate-600 sm:inline dark:text-slate-400">
-                {profile?.fullName || session.user.email}
-              </span>
-              <button
-                type="button"
-                onClick={() => signOut()}
-                className="rounded-md px-2 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-              >
-                Sair
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </header>
   )
