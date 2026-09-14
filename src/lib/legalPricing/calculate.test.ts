@@ -134,7 +134,7 @@ describe('calculateAdhocFee', () => {
 describe('calculateSuccessFee', () => {
   const assumptions = createDefaultPracticeAssumptions()
 
-  it('sugere um percentual sobre o valor da causa que cobre custo, margem, tributo e comissão de êxito', () => {
+  it('sugere um percentual sobre o valor da causa que cobre custo, margem, tributo e comissão de êxito, ajustado pela probabilidade', () => {
     const result = calculateSuccessFee(
       {
         caseValue: 100000,
@@ -148,12 +148,28 @@ describe('calculateSuccessFee', () => {
     )
 
     expect(result.isValid).toBe(true)
-    // amountIfWon = custo / (1 - margem% - tributo% - comissão%)
-    const expectedCost = 40 * hourlyCostForRole('associado_senior', assumptions) + 500
-    const expectedAmountIfWon = round2(expectedCost / (1 - (0.2 + 0.1 + assumptions.successCommissionPercent / 100)))
+    // amountIfWon = custo / (probabilidade × (1 - margem% - tributo% - comissão%))
+    const expectedCost = round2(40 * hourlyCostForRole('associado_senior', assumptions) + 500)
+    const denom = 0.5 * (1 - (0.2 + 0.1 + assumptions.successCommissionPercent / 100))
+    const expectedAmountIfWon = round2(expectedCost / denom)
     expect(result.amountIfWon).toBeCloseTo(expectedAmountIfWon, 0)
     expect(result.suggestedFeePercent).toBeCloseTo((expectedAmountIfWon / 100000) * 100, 1)
     expect(result.expectedValue).toBeCloseTo(expectedAmountIfWon * 0.5, 0)
+    // o valor esperado (ponderado pela probabilidade) deve cobrir o custo do caso
+    expect(result.expectedValue!).toBeGreaterThan(expectedCost)
+  })
+
+  it('exige um percentual maior quanto menor a probabilidade de êxito, para o mesmo caso', () => {
+    const caseInput = {
+      caseValue: 100000,
+      roles: [role('1', 'associado_senior', 40)],
+      directCosts: [directCost('1', 'Custas', 500)],
+      fixedCostAllocation: 0,
+      marginPercent: 20,
+    }
+    const highProbability = calculateSuccessFee({ ...caseInput, successProbabilityPercent: 80 }, assumptions)
+    const lowProbability = calculateSuccessFee({ ...caseInput, successProbabilityPercent: 20 }, assumptions)
+    expect(lowProbability.suggestedFeePercent!).toBeGreaterThan(highProbability.suggestedFeePercent!)
   })
 
   it('avisa quando o percentual sugerido ultrapassa 30% do valor da causa', () => {

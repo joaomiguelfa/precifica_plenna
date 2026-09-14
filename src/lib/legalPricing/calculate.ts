@@ -129,40 +129,57 @@ export function calculateSuccessFee(input: SuccessFeeInput, assumptions: Practic
   const labor = laborCost(input.roles, assumptions)
   const direct = directCostTotal(input.directCosts)
   const costBreakdown = buildCostBreakdown(labor, direct, input.fixedCostAllocation)
-
-  // O honorário só é recebido se o caso for ganho, então a comissão sobre
-  // êxito (repassada quando há recebimento) também precisa ser coberta pelo
-  // valor recebido na vitória — por isso entra como percentual extra aqui,
-  // mas ela é uma condicional que só se realiza se o caso for ganho, então
-  // é o valor recebido nessa hipótese que a inclui.
-  const { price, isValid, warning } = priceFromCostAndRates(
-    costBreakdown.totalCost,
-    input.marginPercent,
-    assumptions.taxBurdenPercent,
-    0,
-    assumptions.successCommissionPercent,
-  )
-
-  const amountIfWon = price
   const probability = input.successProbabilityPercent / 100
-  const expectedValue = amountIfWon != null ? round2(amountIfWon * probability) : null
-  const suggestedFeePercent =
-    amountIfWon != null && input.caseValue > 0 ? round2((amountIfWon / input.caseValue) * 100) : null
 
-  let combinedWarning = warning
-  if (!combinedWarning && suggestedFeePercent != null && suggestedFeePercent > 30) {
-    combinedWarning =
-      'O percentual de êxito sugerido está acima de 30% do valor da causa — vale revisar se o valor da causa está correto ou se o caso comporta esse risco.'
+  if (probability <= 0) {
+    return {
+      costBreakdown,
+      price: null,
+      isValid: false,
+      warning: 'Informe uma probabilidade de êxito maior que zero para calcular o percentual sugerido.',
+      suggestedFeePercent: null,
+      amountIfWon: null,
+      expectedValue: null,
+    }
   }
-  if (!combinedWarning && input.successProbabilityPercent <= 0) {
-    combinedWarning = 'Informe uma probabilidade de êxito maior que zero para calcular o percentual sugerido.'
+
+  // O honorário só é recebido se o caso for ganho: nos casos perdidos (que
+  // acontecem "1 - probabilidade" das vezes, em uma carteira de casos
+  // parecidos) o custo investido não é recuperado. Por isso o valor cobrado
+  // quando se ganha precisa ser dividido tanto pela probabilidade de êxito
+  // quanto pelo que sobra depois de margem, tributo e comissão — cobrindo,
+  // em valor esperado, o custo de todos os casos (ganhos e perdidos).
+  const totalPercent = input.marginPercent + assumptions.taxBurdenPercent + assumptions.successCommissionPercent
+  const denominator = probability * (1 - totalPercent / 100)
+
+  if (denominator <= 0) {
+    return {
+      costBreakdown,
+      price: null,
+      isValid: false,
+      warning:
+        'A combinação de probabilidade de êxito, margem, tributos e comissão não permite calcular um percentual válido — reduza a margem/comissão ou revise a probabilidade.',
+      suggestedFeePercent: null,
+      amountIfWon: null,
+      expectedValue: null,
+    }
+  }
+
+  const amountIfWon = round2(costBreakdown.totalCost / denominator)
+  const expectedValue = round2(amountIfWon * probability)
+  const suggestedFeePercent = input.caseValue > 0 ? round2((amountIfWon / input.caseValue) * 100) : null
+
+  let warning: string | null = null
+  if (suggestedFeePercent != null && suggestedFeePercent > 30) {
+    warning =
+      'O percentual de êxito sugerido está acima de 30% do valor da causa — vale revisar se o valor da causa está correto ou se o caso comporta esse risco.'
   }
 
   return {
     costBreakdown,
-    price,
-    isValid,
-    warning: combinedWarning,
+    price: amountIfWon,
+    isValid: true,
+    warning,
     suggestedFeePercent,
     amountIfWon,
     expectedValue,
