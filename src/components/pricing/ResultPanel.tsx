@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatBRL } from '../../lib/format'
 import type { PricingInput, PricingResult } from '../../types/pricing'
 import { Button } from '../ui/Button'
@@ -7,7 +8,7 @@ import { CostBreakdownChart } from './CostBreakdownChart'
 interface Props {
   input: PricingInput
   result: PricingResult
-  onExportPdf: () => void
+  onExportPdf: (includeBreakdown: boolean) => void
   onSaveHistory: () => void
   saving?: boolean
 }
@@ -24,6 +25,7 @@ const breakdownRows = (result: PricingResult) => [
 
 export function ResultPanel({ input, result, onExportPdf, onSaveHistory, saving }: Props) {
   const { selected } = result
+  const [includeBreakdown, setIncludeBreakdown] = useState(false)
 
   return (
     <div className="space-y-4">
@@ -96,14 +98,32 @@ export function ResultPanel({ input, result, onExportPdf, onSaveHistory, saving 
         </dl>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={onExportPdf} disabled={!selected.isValid}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="secondary" onClick={() => onExportPdf(includeBreakdown)} disabled={!selected.isValid}>
           Exportar orçamento (PDF)
         </Button>
+        <button
+          type="button"
+          onClick={() => setIncludeBreakdown((v) => !v)}
+          aria-pressed={includeBreakdown}
+          title="Quando ativado, o PDF sai com todo o detalhamento de custos, não só o preço final"
+          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+            includeBreakdown
+              ? 'border-indigo-400 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-300'
+              : 'border-slate-300 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+          }`}
+        >
+          {includeBreakdown ? '✓ ' : ''}Descrição
+        </button>
         <Button onClick={onSaveHistory} disabled={saving}>
           {saving ? 'Salvando…' : 'Salvar no histórico'}
         </Button>
       </div>
+      <p className="-mt-2 text-xs text-slate-400 dark:text-slate-500">
+        {includeBreakdown
+          ? 'O PDF vai sair com a descrição completa de como o preço foi calculado.'
+          : 'Ative "Descrição" para o PDF sair com o detalhamento de custos, não só o preço final.'}
+      </p>
     </div>
   )
 }

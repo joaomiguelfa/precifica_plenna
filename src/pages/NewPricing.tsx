@@ -200,7 +200,7 @@ export default function NewPricing() {
           <ResultPanel
             input={input}
             result={result}
-            onExportPdf={() => exportQuotePdf(input, result, profile)}
+            onExportPdf={(includeBreakdown) => exportQuotePdf(input, result, profile, includeBreakdown)}
             onSaveHistory={handleSaveHistory}
             saving={saving}
           />
