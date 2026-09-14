@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation()
 
   if (loading) {
-    return <p className="p-6 text-sm text-slate-400">Carregando…</p>
+    return <p className="p-6 text-sm text-slate-400 dark:text-slate-500">Carregando…</p>
   }
 
   if (!session) {

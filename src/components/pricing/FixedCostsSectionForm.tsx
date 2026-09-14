@@ -10,7 +10,7 @@ export function FixedCostsSectionForm({ input, update }: SectionProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Aluguel do espaço, internet, manutenção preventiva, software de fatiamento pago etc. — rateados pela
         quantidade de peças que você estima produzir no mês.
       </p>
@@ -35,9 +35,9 @@ export function FixedCostsSectionForm({ input, update }: SectionProps) {
           }
         />
       </div>
-      <div className="text-right text-sm text-slate-500">Rateio automático: {formatBRL(auto)}/peça</div>
+      <div className="text-right text-sm text-slate-500 dark:text-slate-400">Rateio automático: {formatBRL(auto)}/peça</div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
         <input
           type="checkbox"
           checked={manualOverridePerPiece != null}
@@ -64,7 +64,7 @@ export function FixedCostsSectionForm({ input, update }: SectionProps) {
         />
       )}
 
-      <div className="text-right text-sm text-slate-600">
+      <div className="text-right text-sm text-slate-600 dark:text-slate-400">
         Custo fixo aplicado: <strong>{formatBRL(effective)}</strong>
       </div>
     </div>

@@ -1,10 +1,21 @@
 @import 'tailwindcss';
 
+/* Manual dark mode: toggled via a `.dark` class on <html>, not just OS preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   background-color: #f8fafc;
+}
+
+.dark body {
+  background-color: #020617;
 }

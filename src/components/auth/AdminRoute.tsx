@@ -6,7 +6,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   const { loading, isAdmin } = useAuth()
 
   if (loading) {
-    return <p className="p-6 text-sm text-slate-400">Carregando…</p>
+    return <p className="p-6 text-sm text-slate-400 dark:text-slate-500">Carregando…</p>
   }
 
   if (!isAdmin) {

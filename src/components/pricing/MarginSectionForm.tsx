@@ -12,11 +12,11 @@ export function MarginSectionForm({ input, update, result }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex rounded-md border border-slate-300 p-1 text-sm">
+      <div className="flex rounded-md border border-slate-300 p-1 text-sm dark:border-slate-700">
         <button
           type="button"
           className={`flex-1 rounded px-3 py-1.5 font-medium transition-colors ${
-            method === 'margin_on_price' ? 'bg-indigo-600 text-white' : 'text-slate-600'
+            method === 'margin_on_price' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'
           }`}
           onClick={() =>
             update((draft) => {
@@ -29,7 +29,7 @@ export function MarginSectionForm({ input, update, result }: Props) {
         <button
           type="button"
           className={`flex-1 rounded px-3 py-1.5 font-medium transition-colors ${
-            method === 'markup_on_cost' ? 'bg-indigo-600 text-white' : 'text-slate-600'
+            method === 'markup_on_cost' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'
           }`}
           onClick={() =>
             update((draft) => {
@@ -88,7 +88,7 @@ export function MarginSectionForm({ input, update, result }: Props) {
       </div>
 
       {result.priceDifferenceBetweenMethods != null && result.priceDifferenceBetweenMethods !== 0 && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
           A diferença entre os dois métodos é de <strong>{formatBRL(Math.abs(result.priceDifferenceBetweenMethods))}</strong>{' '}
           no preço final. O markup simples costuma parecer mais barato, mas não garante a margem real desejada
           depois que as taxas de venda entram — repare na "margem real" de cada card acima.
@@ -118,25 +118,27 @@ function ComparisonCard({
   return (
     <div
       className={`rounded-lg border p-3 ${
-        highlighted ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-white'
+        highlighted
+          ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-950/40'
+          : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
       }`}
     >
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-600">{title}</span>
+        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{title}</span>
         {highlighted && (
           <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-medium text-white">
             selecionado
           </span>
         )}
       </div>
-      <p className="mb-2 text-[11px] text-slate-400">{formula}</p>
+      <p className="mb-2 text-[11px] text-slate-400 dark:text-slate-500">{formula}</p>
       {isValid ? (
         <>
-          <p className="text-xl font-semibold text-slate-900">{formatBRL(finalPrice)}</p>
-          <p className="text-xs text-slate-500">margem real: {formatPercent(effectiveMarginPercent)}</p>
+          <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{formatBRL(finalPrice)}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">margem real: {formatPercent(effectiveMarginPercent)}</p>
         </>
       ) : (
-        <p className="text-xs text-red-600">{warning}</p>
+        <p className="text-xs text-red-600 dark:text-red-400">{warning}</p>
       )}
     </div>
   )

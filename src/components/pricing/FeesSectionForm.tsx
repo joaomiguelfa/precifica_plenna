@@ -6,7 +6,7 @@ export function FeesSectionForm({ input, update }: SectionProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Essas taxas incidem sobre o <strong>preço final de venda</strong>, não sobre o custo — é assim que o
         marketplace e a maquininha/gateway realmente cobram.
       </p>

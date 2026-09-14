@@ -19,13 +19,13 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Filamentos / cores usadas
           </h4>
           <div className="flex gap-2">
             {materialProfiles.length > 0 && (
               <select
-                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600"
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 value=""
                 onChange={(e) => {
                   const profile = materialProfiles.find((p) => p.id === e.target.value)
@@ -71,11 +71,11 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
         </div>
 
         {materials.length === 0 && (
-          <p className="text-sm text-slate-400">Nenhum material adicionado ainda.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum material adicionado ainda.</p>
         )}
 
         {materials.map((material, index) => (
-          <div key={material.id} className="grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2">
+          <div key={material.id} className="grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800/60">
             <TextField
               label="Nome / cor"
               value={material.name}
@@ -108,7 +108,7 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
               }
               className="col-span-6 sm:col-span-3"
             />
-            <div className="col-span-10 flex items-center justify-between text-xs text-slate-500 sm:col-span-11 sm:justify-end sm:gap-3">
+            <div className="col-span-10 flex items-center justify-between text-xs text-slate-500 sm:col-span-11 sm:justify-end sm:gap-3 dark:text-slate-400">
               <span className="sm:hidden">Subtotal</span>
               <span>{formatBRL((material.weightGrams / 1000) * material.costPerKg)}</span>
             </div>
@@ -129,8 +129,8 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
           </div>
         ))}
 
-        <div className="text-right text-sm text-slate-600">
-          Subtotal material: <strong>{formatBRL(materialBaseCost)}</strong>
+        <div className="text-right text-sm text-slate-600 dark:text-slate-400">
+          Subtotal material: <strong className="dark:text-slate-200">{formatBRL(materialBaseCost)}</strong>
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Outros insumos diretos
           </h4>
           <Button
@@ -171,13 +171,13 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
         </div>
 
         {extraSupplies.length === 0 && (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-400 dark:text-slate-500">
             Ex.: suporte solúvel, insert metálico, tinta, resina de pós-processamento…
           </p>
         )}
 
         {extraSupplies.map((item, index) => (
-          <div key={item.id} className="grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2">
+          <div key={item.id} className="grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800/60">
             <TextField
               label="Nome do insumo"
               value={item.name}
@@ -227,7 +227,7 @@ export function MaterialSectionForm({ input, update, materialProfiles }: Props) 
         ))}
 
         {extraSupplies.length > 0 && (
-          <div className="text-right text-sm text-slate-600">
+          <div className="text-right text-sm text-slate-600 dark:text-slate-400">
             Subtotal insumos: <strong>{formatBRL(extraSuppliesCost)}</strong>
           </div>
         )}

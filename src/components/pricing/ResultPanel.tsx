@@ -28,15 +28,15 @@ export function ResultPanel({ input, result, onExportPdf, onSaveHistory, saving 
   return (
     <div className="space-y-4">
       <Card className="p-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Custo real de produção</p>
-        <p className="text-2xl font-semibold text-slate-900">{formatBRL(result.costBreakdown.totalProductionCost)}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Custo real de produção</p>
+        <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatBRL(result.costBreakdown.totalProductionCost)}</p>
 
-        <div className="my-4 border-t border-dashed border-slate-200" />
+        <div className="my-4 border-t border-dashed border-slate-200 dark:border-slate-700" />
 
-        <p className="text-xs font-medium uppercase tracking-wide text-indigo-600">Preço final sugerido</p>
-        <p className="text-4xl font-bold text-indigo-700">{formatBRL(selected.finalPrice)}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Preço final sugerido</p>
+        <p className="text-4xl font-bold text-indigo-700 dark:text-indigo-400">{formatBRL(selected.finalPrice)}</p>
         {selected.isValid && selected.finalPrice != null && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Dessa diferença de {formatBRL(selected.finalPrice - result.costBreakdown.totalProductionCost)}, apenas{' '}
             <strong>{formatBRL(selected.profitAmount)}</strong> é lucro — o restante ({formatBRL(selected.fees.totalFeesAmount)})
             vai para taxas de plataforma, cartão e impostos.
@@ -44,16 +44,18 @@ export function ResultPanel({ input, result, onExportPdf, onSaveHistory, saving 
         )}
 
         {input.quantity > 1 && result.batchTotal != null && (
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Pedido de {input.quantity} peças: <strong>{formatBRL(result.batchTotal)}</strong>
           </p>
         )}
       </Card>
 
       {result.warnings.length > 0 && (
-        <Card className="border-amber-300 bg-amber-50 p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-700">Alertas de sanidade</p>
-          <ul className="list-inside list-disc space-y-1 text-sm text-amber-800">
+        <Card className="border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            Alertas de sanidade
+          </p>
+          <ul className="list-inside list-disc space-y-1 text-sm text-amber-800 dark:text-amber-300">
             {result.warnings.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
@@ -62,32 +64,32 @@ export function ResultPanel({ input, result, onExportPdf, onSaveHistory, saving 
       )}
 
       <Card className="p-5">
-        <p className="mb-3 text-sm font-semibold text-slate-700">Composição do preço final</p>
+        <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Composição do preço final</p>
         <CostBreakdownChart costBreakdown={result.costBreakdown} selected={selected} />
       </Card>
 
       <Card className="p-5">
-        <p className="mb-3 text-sm font-semibold text-slate-700">Detalhamento dos custos</p>
+        <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Detalhamento dos custos</p>
         <dl className="space-y-1.5 text-sm">
           {breakdownRows(result).map((row) => (
             <div key={row.label} className="flex items-center justify-between">
-              <dt className="text-slate-500">{row.label}</dt>
-              <dd className="font-medium text-slate-800">{formatBRL(row.value)}</dd>
+              <dt className="text-slate-500 dark:text-slate-400">{row.label}</dt>
+              <dd className="font-medium text-slate-800 dark:text-slate-200">{formatBRL(row.value)}</dd>
             </div>
           ))}
-          <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 font-semibold">
+          <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 font-semibold dark:border-slate-700">
             <dt>Custo total de produção</dt>
             <dd>{formatBRL(result.costBreakdown.totalProductionCost)}</dd>
           </div>
-          <div className="flex items-center justify-between pt-2 text-slate-500">
+          <div className="flex items-center justify-between pt-2 text-slate-500 dark:text-slate-400">
             <dt>Taxas sobre a venda</dt>
             <dd>{formatBRL(selected.fees.totalFeesAmount)}</dd>
           </div>
-          <div className="flex items-center justify-between text-slate-500">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
             <dt>Lucro</dt>
             <dd>{formatBRL(selected.profitAmount)}</dd>
           </div>
-          <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 text-base font-bold text-indigo-700">
+          <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 text-base font-bold text-indigo-700 dark:border-slate-700 dark:text-indigo-400">
             <dt>Preço final</dt>
             <dd>{formatBRL(selected.finalPrice)}</dd>
           </div>

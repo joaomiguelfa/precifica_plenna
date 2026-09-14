@@ -12,7 +12,7 @@ export function CollapsibleSection({ title, subtitle, badge, defaultOpen = true,
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="border-b border-slate-200 last:border-b-0">
+    <div className="border-b border-slate-200 last:border-b-0 dark:border-slate-800">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -20,13 +20,13 @@ export function CollapsibleSection({ title, subtitle, badge, defaultOpen = true,
         aria-expanded={open}
       >
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+          {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-3">
           {badge}
           <span
-            className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`text-slate-400 transition-transform dark:text-slate-500 ${open ? 'rotate-180' : ''}`}
             aria-hidden="true"
           >
             ▾

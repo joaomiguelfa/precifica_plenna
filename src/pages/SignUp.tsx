@@ -52,8 +52,8 @@ export default function SignUp() {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center text-center">
         <p className="text-3xl">📩</p>
-        <h1 className="mt-3 text-xl font-semibold text-slate-900">Confirme seu e-mail</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="mt-3 text-xl font-semibold text-slate-900 dark:text-slate-100">Confirme seu e-mail</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Enviamos um link de confirmação para <strong>{email}</strong>. Depois de confirmar, volte e entre
           normalmente.
         </p>
@@ -68,48 +68,52 @@ export default function SignUp() {
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center py-8">
       <div className="mb-6 text-center">
         <p className="text-2xl">🖨️</p>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Criar cadastro</h1>
-        <p className="text-sm text-slate-500">Seus dados identificam quem está usando o Precifica.Plenna.</p>
+        <h1 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Criar cadastro</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Seus dados identificam quem está usando o Precifica.Plenna.</p>
       </div>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700">Nome completo</span>
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">Nome completo</span>
             <input
               type="text"
               required
               autoComplete="name"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700">
-              CPF ou CNPJ {label && <span className="font-normal text-slate-400">({label})</span>}
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">
+              CPF ou CNPJ {label && <span className="font-normal text-slate-400 dark:text-slate-500">({label})</span>}
             </span>
             <input
               type="text"
               required
               inputMode="numeric"
               placeholder="000.000.000-00"
-              className={`w-full rounded-md border px-3 py-2 outline-none focus:ring-1 ${
-                documentValid ? 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500' : 'border-red-400 focus:border-red-500 focus:ring-red-500'
+              className={`w-full rounded-md border px-3 py-2 outline-none focus:ring-1 dark:bg-slate-900 dark:text-slate-100 ${
+                documentValid
+                  ? 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700'
+                  : 'border-red-400 focus:border-red-500 focus:ring-red-500 dark:border-red-700'
               }`}
               value={document}
               onChange={(e) => setDocument(formatDocument(e.target.value))}
             />
-            {!documentValid && <span className="mt-1 block text-xs text-red-600">CPF/CNPJ inválido.</span>}
+            {!documentValid && (
+              <span className="mt-1 block text-xs text-red-600 dark:text-red-400">CPF/CNPJ inválido.</span>
+            )}
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700">E-mail</span>
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">E-mail</span>
             <input
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -118,11 +122,11 @@ export default function SignUp() {
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
               <span className="mb-1 flex items-center gap-1">
-                <span className="font-medium text-slate-700">Senha</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Senha</span>
                 <span
                   tabIndex={0}
                   title={PASSWORD_HINT}
-                  className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600"
+                  className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   aria-label={PASSWORD_HINT}
                 >
                   ?
@@ -133,33 +137,33 @@ export default function SignUp() {
                 required
                 autoComplete="new-password"
                 minLength={8}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">Confirmar senha</span>
+              <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">Confirmar senha</span>
               <input
                 type="password"
                 required
                 autoComplete="new-password"
                 minLength={8}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </label>
-            <p className="col-span-2 -mt-2 text-xs text-slate-400">{PASSWORD_HINT}</p>
+            <p className="col-span-2 -mt-2 text-xs text-slate-400 dark:text-slate-500">{PASSWORD_HINT}</p>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Criando conta…' : 'Criar cadastro'}
           </Button>
         </form>
       </Card>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
         Já tem conta?{' '}
         <Link to="/login" className="font-medium text-indigo-600 hover:underline">
           Entrar

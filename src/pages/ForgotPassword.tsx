@@ -29,8 +29,8 @@ export default function ForgotPassword() {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center text-center">
         <p className="text-3xl">📩</p>
-        <h1 className="mt-3 text-xl font-semibold text-slate-900">Confira seu e-mail</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="mt-3 text-xl font-semibold text-slate-900 dark:text-slate-100">Confira seu e-mail</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Se houver uma conta com o e-mail <strong>{email}</strong>, enviamos um link para redefinir a senha.
         </p>
         <Link to="/login" className="mt-6 text-sm font-medium text-indigo-600 hover:underline">
@@ -44,29 +44,29 @@ export default function ForgotPassword() {
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center">
       <div className="mb-6 text-center">
         <p className="text-2xl">🔑</p>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Esqueci minha senha</h1>
-        <p className="text-sm text-slate-500">Informe o e-mail da sua conta para receber um link de redefinição.</p>
+        <h1 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Esqueci minha senha</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Informe o e-mail da sua conta para receber um link de redefinição.</p>
       </div>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700">E-mail</span>
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">E-mail</span>
             <input
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Enviando…' : 'Enviar link de recuperação'}
           </Button>
         </form>
       </Card>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
         Lembrou a senha?{' '}
         <Link to="/login" className="font-medium text-indigo-600 hover:underline">
           Entrar

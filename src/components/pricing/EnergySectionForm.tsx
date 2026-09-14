@@ -8,7 +8,7 @@ export function EnergySectionForm({ input, update }: SectionProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Tempo de impressão: extraia direto do seu fatiador (Cura, PrusaSlicer, Orca…). Ele também alimenta o
         cálculo de depreciação abaixo.
       </p>
@@ -44,7 +44,7 @@ export function EnergySectionForm({ input, update }: SectionProps) {
           }
         />
       </div>
-      <div className="text-right text-sm text-slate-600">
+      <div className="text-right text-sm text-slate-600 dark:text-slate-400">
         Custo de energia: <strong>{formatBRL(cost)}</strong>
       </div>
     </div>

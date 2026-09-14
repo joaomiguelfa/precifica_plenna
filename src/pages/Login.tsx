@@ -33,25 +33,25 @@ export default function Login() {
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center">
       <div className="mb-6 text-center">
         <p className="text-2xl">🖨️</p>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Entrar no Precifica.Plenna</h1>
-        <p className="text-sm text-slate-500">Cada conta tem seus próprios perfis, histórico e configurações.</p>
+        <h1 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Entrar no Precifica.Plenna</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Cada conta tem seus próprios perfis, histórico e configurações.</p>
       </div>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700">E-mail</span>
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">E-mail</span>
             <input
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1 flex items-center justify-between">
-              <span className="font-medium text-slate-700">Senha</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Senha</span>
               <Link to="/esqueci-senha" className="text-xs font-medium text-indigo-600 hover:underline">
                 Esqueci minha senha
               </Link>
@@ -60,18 +60,18 @@ export default function Login() {
               type="password"
               required
               autoComplete="current-password"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Entrando…' : 'Entrar'}
           </Button>
         </form>
       </Card>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
         Ainda não tem conta?{' '}
         <Link to="/cadastro" className="font-medium text-indigo-600 hover:underline">
           Criar cadastro

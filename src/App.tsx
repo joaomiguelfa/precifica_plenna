@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { useAuth } from './lib/auth/AuthContext'
+import { useTheme } from './lib/theme/ThemeContext'
 import Admin from './pages/Admin'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
@@ -21,14 +22,29 @@ const navItems = [
   { to: '/configuracoes', label: 'Configurações', end: false },
 ]
 
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme()
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+      title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+      className="rounded-md px-2 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+    >
+      {theme === 'dark' ? '☀️' : '🌙'}
+    </button>
+  )
+}
+
 function Header() {
   const { session, profile, isAdmin, signOut } = useAuth()
   const items = isAdmin ? [...navItems, { to: '/admin', label: 'Administração', end: false }] : navItems
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <div className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+        <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
           <span aria-hidden="true">🖨️</span>
           <span>Precifica.Plenna</span>
         </div>
@@ -43,7 +59,7 @@ function Header() {
                   `whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-indigo-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                   }`
                 }
               >
@@ -52,20 +68,23 @@ function Header() {
             ))}
           </nav>
         )}
-        {session && (
-          <div className="flex shrink-0 items-center gap-3 border-l border-slate-200 pl-3 text-sm">
-            <span className="hidden text-slate-600 sm:inline">
-              {profile?.fullName || session.user.email}
-            </span>
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="rounded-md px-2 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            >
-              Sair
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle />
+          {session && (
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-3 text-sm dark:border-slate-800">
+              <span className="hidden text-slate-600 sm:inline dark:text-slate-400">
+                {profile?.fullName || session.user.email}
+              </span>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="rounded-md px-2 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              >
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )
@@ -73,7 +92,7 @@ function Header() {
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Header />
 
       <main className="mx-auto max-w-6xl px-4 py-6">

@@ -56,15 +56,15 @@ export default function Profiles() {
     refresh()
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Carregando perfis…</p>
-  if (error) return <p className="text-sm text-red-600">{error}</p>
+  if (loading) return <p className="text-sm text-slate-400 dark:text-slate-500">Carregando perfis…</p>
+  if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Perfis salvos</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Impressoras</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Impressoras</h2>
         <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
           <TextField label="Nome" value={newPrinter.name} onChange={(v) => setNewPrinter({ ...newPrinter, name: v })} />
           <NumberField
@@ -89,12 +89,12 @@ export default function Profiles() {
             + Adicionar
           </Button>
         </div>
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {printers.map((p) => (
             <li key={p.id} className="flex items-center justify-between py-2 text-sm">
               <div>
-                <p className="font-medium text-slate-800">{p.name}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-medium text-slate-800 dark:text-slate-200">{p.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {p.powerWatts}W · {formatBRL(p.acquisitionCost)} · {p.lifespanHours}h de vida útil
                 </p>
               </div>
@@ -103,12 +103,12 @@ export default function Profiles() {
               </Button>
             </li>
           ))}
-          {printers.length === 0 && <p className="py-2 text-sm text-slate-400">Nenhuma impressora salva.</p>}
+          {printers.length === 0 && <p className="py-2 text-sm text-slate-400 dark:text-slate-500">Nenhuma impressora salva.</p>}
         </ul>
       </Card>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Materiais</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Materiais</h2>
         <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
           <TextField label="Nome" value={newMaterial.name} onChange={(v) => setNewMaterial({ ...newMaterial, name: v })} />
           <TextField
@@ -128,12 +128,12 @@ export default function Profiles() {
             + Adicionar
           </Button>
         </div>
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {materials.map((m) => (
             <li key={m.id} className="flex items-center justify-between py-2 text-sm">
               <div>
-                <p className="font-medium text-slate-800">{m.name}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-medium text-slate-800 dark:text-slate-200">{m.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {[m.materialType, m.color].filter(Boolean).join(' · ')} — {formatBRL(m.costPerKg)}/kg
                 </p>
               </div>
@@ -142,7 +142,7 @@ export default function Profiles() {
               </Button>
             </li>
           ))}
-          {materials.length === 0 && <p className="py-2 text-sm text-slate-400">Nenhum material salvo.</p>}
+          {materials.length === 0 && <p className="py-2 text-sm text-slate-400 dark:text-slate-500">Nenhum material salvo.</p>}
         </ul>
       </Card>
     </div>

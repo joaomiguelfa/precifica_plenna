@@ -23,10 +23,10 @@ export function DepreciationSectionForm({ input, update, printerProfiles }: Prop
     <div className="space-y-4">
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Impressora</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Impressora</h4>
           {printerProfiles.length > 0 && (
             <select
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600"
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               value=""
               onChange={(e) => {
                 const profile = printerProfiles.find((p) => p.id === e.target.value)
@@ -84,14 +84,14 @@ export function DepreciationSectionForm({ input, update, printerProfiles }: Prop
             }
           />
         </div>
-        <div className="mt-1 text-right text-sm text-slate-600">
+        <div className="mt-1 text-right text-sm text-slate-600 dark:text-slate-400">
           Depreciação da impressora nesta peça: <strong>{formatBRL(printerDep)}</strong>
         </div>
       </div>
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Acessórios (mesa extra, secador de filamento…)
           </h4>
           <Button
@@ -114,7 +114,7 @@ export function DepreciationSectionForm({ input, update, printerProfiles }: Prop
         </div>
 
         {accessories.map((accessory, index) => (
-          <div key={accessory.id} className="mb-2 grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2">
+          <div key={accessory.id} className="mb-2 grid grid-cols-12 items-end gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800/60">
             <TextField
               label="Nome"
               value={accessory.name}
@@ -165,7 +165,7 @@ export function DepreciationSectionForm({ input, update, printerProfiles }: Prop
         ))}
 
         {accessories.length > 0 && (
-          <div className="text-right text-sm text-slate-600">
+          <div className="text-right text-sm text-slate-600 dark:text-slate-400">
             Depreciação dos acessórios: <strong>{formatBRL(accessoriesDep)}</strong>
           </div>
         )}

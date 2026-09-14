@@ -107,8 +107,8 @@ export default function NewPricing() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Nova precificação</h1>
-          <p className="text-sm text-slate-500">Os valores são calculados em tempo real conforme você digita.</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Nova precificação</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Os valores são calculados em tempo real conforme você digita.</p>
         </div>
         <Button variant="ghost" onClick={resetForm}>
           Novo cálculo
@@ -138,31 +138,31 @@ export default function NewPricing() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="divide-y divide-slate-200">
+        <Card className="divide-y divide-slate-200 dark:divide-slate-800">
           <CollapsibleSection
             title="1. Material e insumos diretos"
-            badge={<span className="text-xs text-slate-500">{formatBRL(result.costBreakdown.materialTotalCost)}</span>}
+            badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.materialTotalCost)}</span>}
           >
             <MaterialSectionForm input={input} update={update} materialProfiles={materialProfiles} />
           </CollapsibleSection>
 
           <CollapsibleSection
             title="2. Energia elétrica"
-            badge={<span className="text-xs text-slate-500">{formatBRL(result.costBreakdown.energyCost)}</span>}
+            badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.energyCost)}</span>}
           >
             <EnergySectionForm input={input} update={update} />
           </CollapsibleSection>
 
           <CollapsibleSection
             title="3. Depreciação de equipamento"
-            badge={<span className="text-xs text-slate-500">{formatBRL(result.costBreakdown.depreciationCost)}</span>}
+            badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.depreciationCost)}</span>}
           >
             <DepreciationSectionForm input={input} update={update} printerProfiles={printerProfiles} />
           </CollapsibleSection>
 
           <CollapsibleSection
             title="4. Mão de obra"
-            badge={<span className="text-xs text-slate-500">{formatBRL(result.costBreakdown.laborCost)}</span>}
+            badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.laborCost)}</span>}
           >
             <LaborSectionForm input={input} update={update} />
           </CollapsibleSection>
@@ -170,7 +170,7 @@ export default function NewPricing() {
           <CollapsibleSection
             title="5. Custos fixos rateados"
             defaultOpen={false}
-            badge={<span className="text-xs text-slate-500">{formatBRL(result.costBreakdown.fixedCostPerPiece)}</span>}
+            badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.fixedCostPerPiece)}</span>}
           >
             <FixedCostsSectionForm input={input} update={update} />
           </CollapsibleSection>
@@ -179,7 +179,7 @@ export default function NewPricing() {
             title="6. Embalagem e logística"
             defaultOpen={false}
             badge={
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 {formatBRL(result.costBreakdown.packagingCost + result.costBreakdown.shippingCost)}
               </span>
             }
@@ -204,10 +204,10 @@ export default function NewPricing() {
             onSaveHistory={handleSaveHistory}
             saving={saving}
           />
-          {saveMessage && <p className="text-sm text-slate-600">{saveMessage}</p>}
+          {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
 
           <Card className="p-5">
-            <p className="mb-3 text-sm font-semibold text-slate-700">Simulador de cenários</p>
+            <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Simulador de cenários</p>
             <ScenarioComparator input={input} />
           </Card>
         </div>

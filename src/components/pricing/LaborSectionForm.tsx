@@ -8,7 +8,7 @@ export function LaborSectionForm({ input, update }: SectionProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Tempo de trabalho manual: modelagem/preparo do arquivo, pós-processamento, montagem e embalagem. O tempo
         de máquina (impressão em si) não entra aqui — ele já é coberto pela energia e depreciação.
       </p>
@@ -34,7 +34,7 @@ export function LaborSectionForm({ input, update }: SectionProps) {
           }
         />
       </div>
-      <div className="text-right text-sm text-slate-600">
+      <div className="text-right text-sm text-slate-600 dark:text-slate-400">
         Custo de mão de obra: <strong>{formatBRL(cost)}</strong>
       </div>
     </div>

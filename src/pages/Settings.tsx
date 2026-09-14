@@ -25,12 +25,12 @@ export default function Settings() {
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Carregando…</p>
+  if (loading) return <p className="text-sm text-slate-400 dark:text-slate-500">Carregando…</p>
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-900">Configurações</h1>
-      <p className="text-sm text-slate-500">
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Configurações</h1>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Esses valores são usados como padrão para novos cálculos de precificação (podem ser ajustados peça a
         peça).
       </p>
@@ -69,7 +69,7 @@ export default function Settings() {
           />
         </div>
         <Button onClick={handleSave}>Salvar configurações</Button>
-        {status && <p className="text-sm text-slate-600">{status}</p>}
+        {status && <p className="text-sm text-slate-600 dark:text-slate-400">{status}</p>}
       </Card>
     </div>
   )

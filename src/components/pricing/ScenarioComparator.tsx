@@ -25,7 +25,7 @@ export function ScenarioComparator({ input }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Compare o preço final resultante de diferentes margens sobre a venda, sem alterar o cálculo principal.
       </p>
       <div className="grid grid-cols-3 gap-2">
@@ -43,17 +43,17 @@ export function ScenarioComparator({ input }: Props) {
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {scenarios.map(({ marginPercent, result }) => (
-          <div key={marginPercent} className="rounded-lg border border-slate-200 bg-white p-3">
-            <p className="text-xs font-semibold text-slate-500">Margem de {marginPercent}%</p>
+          <div key={marginPercent} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Margem de {marginPercent}%</p>
             {result.marginOnPrice.isValid ? (
               <>
-                <p className="text-lg font-bold text-slate-900">{formatBRL(result.marginOnPrice.finalPrice)}</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatBRL(result.marginOnPrice.finalPrice)}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   lucro: {formatBRL(result.marginOnPrice.profitAmount)} ({formatPercent(result.marginOnPrice.effectiveMarginPercent)})
                 </p>
               </>
             ) : (
-              <p className="text-xs text-red-600">Margem + taxas ≥ 100%</p>
+              <p className="text-xs text-red-600 dark:text-red-400">Margem + taxas ≥ 100%</p>
             )}
           </div>
         ))}
