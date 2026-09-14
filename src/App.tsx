@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { useAuth } from './lib/auth/AuthContext'
+import { SEGMENT_LABELS, useSegment, type BusinessSegment } from './lib/segment/SegmentContext'
 import { useTheme } from './lib/theme/ThemeContext'
 import Admin from './pages/Admin'
 import CompleteProfile from './pages/CompleteProfile'
@@ -9,19 +10,44 @@ import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
 import Login from './pages/Login'
+import NewLegalPricing from './pages/NewLegalPricing'
 import NewPricing from './pages/NewPricing'
 import Profiles from './pages/Profiles'
 import ResetPassword from './pages/ResetPassword'
 import Settings from './pages/Settings'
 import SignUp from './pages/SignUp'
 
-const navItems = [
-  { to: '/', label: 'Início', end: true },
-  { to: '/nova', label: 'Nova precificação', end: false },
-  { to: '/perfis', label: 'Perfis salvos', end: false },
-  { to: '/historico', label: 'Histórico', end: false },
-  { to: '/configuracoes', label: 'Configurações', end: false },
-]
+const navItemsBySegment: Record<BusinessSegment, { to: string; label: string; end: boolean }[]> = {
+  impressao3d: [
+    { to: '/', label: 'Início', end: true },
+    { to: '/nova', label: 'Nova precificação', end: false },
+    { to: '/perfis', label: 'Perfis salvos', end: false },
+    { to: '/historico', label: 'Histórico', end: false },
+    { to: '/configuracoes', label: 'Configurações', end: false },
+  ],
+  bbcs_advocacia: [
+    { to: '/', label: 'Início', end: true },
+    { to: '/honorarios', label: 'Nova precificação', end: false },
+  ],
+}
+
+function SegmentSelect() {
+  const { segment, setSegment } = useSegment()
+  return (
+    <select
+      value={segment}
+      onChange={(e) => setSegment(e.target.value as BusinessSegment)}
+      aria-label="Negócio"
+      className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+    >
+      {Object.entries(SEGMENT_LABELS).map(([value, label]) => (
+        <option key={value} value={value}>
+          {label}
+        </option>
+      ))}
+    </select>
+  )
+}
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
@@ -40,16 +66,19 @@ function ThemeToggle() {
 
 function Header() {
   const { session, profile, isAdmin, signOut } = useAuth()
-  const items = isAdmin ? [...navItems, { to: '/admin', label: 'Administração', end: false }] : navItems
+  const { segment } = useSegment()
+  const baseItems = navItemsBySegment[segment]
+  const items = isAdmin ? [...baseItems, { to: '/admin', label: 'Administração', end: false }] : baseItems
   const profileComplete = profile != null && profile.document !== ''
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-          <span aria-hidden="true">🖨️</span>
+          <span aria-hidden="true">{segment === 'bbcs_advocacia' ? '⚖️' : '🖨️'}</span>
           <span>Precifica.Plenna</span>
         </div>
+        {session && profileComplete && <SegmentSelect />}
         {session && profileComplete && (
           <nav className="-mx-2 flex flex-1 justify-end gap-1 overflow-x-auto">
             {items.map((item) => (
@@ -156,6 +185,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/honorarios"
+            element={
+              <ProtectedRoute>
+                <NewLegalPricing />
               </ProtectedRoute>
             }
           />
