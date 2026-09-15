@@ -4,7 +4,6 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
-import { createDefaultPracticeAssumptions } from '../lib/legalPricing/calculate'
 import {
   deleteEmployeeProfile,
   deleteFixedCostProfile,
@@ -15,10 +14,15 @@ import {
   type EmployeeProfile,
   type FixedCostProfile,
 } from '../lib/data/legalProfiles'
-import { getLegalSettings, saveLegalSettings } from '../lib/data/legalSettings'
+import {
+  createDefaultLegalOfficeSettings,
+  getLegalSettings,
+  saveLegalSettings,
+  type LegalOfficeSettings,
+} from '../lib/data/legalSettings'
 import { formatBRL } from '../lib/format'
 import { LAWYER_ROLE_LABELS } from '../types/legalPricing'
-import type { LawyerRole, PracticeAssumptions } from '../types/legalPricing'
+import type { LawyerRole } from '../types/legalPricing'
 
 const ROLE_OPTIONS = Object.entries(LAWYER_ROLE_LABELS) as [LawyerRole, string][]
 
@@ -32,19 +36,20 @@ const emptyFixedCost = { name: '', monthlyCost: 0 }
 export default function LegalProfiles() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
-  const [assumptions, setAssumptions] = useState<PracticeAssumptions>(createDefaultPracticeAssumptions())
+  const [officeSettings, setOfficeSettings] = useState<LegalOfficeSettings>(createDefaultLegalOfficeSettings())
   const [newEmployee, setNewEmployee] = useState(emptyEmployee)
   const [newFixedCost, setNewFixedCost] = useState(emptyFixedCost)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [assumptionsStatus, setAssumptionsStatus] = useState<string | null>(null)
+  const [fixedCostSettingsStatus, setFixedCostSettingsStatus] = useState<string | null>(null)
 
   async function refresh() {
     try {
-      const [e, f, a] = await Promise.all([listEmployeeProfiles(), listFixedCostProfiles(), getLegalSettings()])
+      const [e, f, s] = await Promise.all([listEmployeeProfiles(), listFixedCostProfiles(), getLegalSettings()])
       setEmployees(e)
       setFixedCosts(f)
-      setAssumptions(a)
+      setOfficeSettings(s)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar perfis.')
     } finally {
@@ -59,10 +64,20 @@ export default function LegalProfiles() {
   async function handleSaveAssumptions() {
     setAssumptionsStatus(null)
     try {
-      await saveLegalSettings(assumptions)
+      await saveLegalSettings(officeSettings)
       setAssumptionsStatus('Premissas salvas.')
     } catch (err) {
       setAssumptionsStatus(err instanceof Error ? `Erro: ${err.message}` : 'Erro ao salvar.')
+    }
+  }
+
+  async function handleSaveMonthlyCaseCount() {
+    setFixedCostSettingsStatus(null)
+    try {
+      await saveLegalSettings(officeSettings)
+      setFixedCostSettingsStatus('Salvo.')
+    } catch (err) {
+      setFixedCostSettingsStatus(err instanceof Error ? `Erro: ${err.message}` : 'Erro ao salvar.')
     }
   }
 
@@ -88,7 +103,10 @@ export default function LegalProfiles() {
       <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
 
       <Card className="divide-y divide-slate-200 dark:divide-slate-800">
-        <PracticeAssumptionsPanel assumptions={assumptions} onChange={setAssumptions} />
+        <PracticeAssumptionsPanel
+          assumptions={officeSettings.assumptions}
+          onChange={(assumptions) => setOfficeSettings({ ...officeSettings, assumptions })}
+        />
         <div className="flex flex-wrap items-center gap-3 p-4">
           <Button onClick={handleSaveAssumptions}>Salvar premissas</Button>
           {assumptionsStatus && <p className="text-sm text-slate-600 dark:text-slate-400">{assumptionsStatus}</p>}
@@ -191,6 +209,37 @@ export default function LegalProfiles() {
             <p className="py-2 text-sm text-slate-400 dark:text-slate-500">Nenhum custo fixo salvo.</p>
           )}
         </ul>
+
+        <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <div className="flex flex-wrap items-end gap-3">
+            <NumberField
+              label="Quantos casos o escritório atende por mês"
+              value={officeSettings.monthlyCaseCount}
+              onChange={(v) => setOfficeSettings({ ...officeSettings, monthlyCaseCount: v })}
+              className="max-w-xs"
+            />
+            <Button onClick={handleSaveMonthlyCaseCount}>Salvar</Button>
+            {fixedCostSettingsStatus && (
+              <p className="text-sm text-slate-600 dark:text-slate-400">{fixedCostSettingsStatus}</p>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            É esse número que divide o total de custos fixos acima para calcular o rateio usado
+            automaticamente em cada caso, na aba "Custos do caso" de "Nova precificação"
+            {fixedCosts.length > 0 && officeSettings.monthlyCaseCount > 0 && (
+              <>
+                {' '}
+                — hoje isso dá{' '}
+                <strong>
+                  {formatBRL(
+                    fixedCosts.reduce((sum, f) => sum + f.monthlyCost, 0) / officeSettings.monthlyCaseCount,
+                  )}
+                </strong>{' '}
+                por caso.
+              </>
+            )}
+          </p>
+        </div>
       </Card>
     </div>
   )

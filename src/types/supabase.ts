@@ -88,6 +88,7 @@ export type Database = {
       bbcs_settings: {
         Row: {
           available_hours_per_month: number
+          monthly_case_count: number
           monthly_cost_by_role: Json
           realization_rate: number
           success_commission_percent: number
@@ -99,6 +100,7 @@ export type Database = {
         }
         Insert: {
           available_hours_per_month?: number
+          monthly_case_count?: number
           monthly_cost_by_role?: Json
           realization_rate?: number
           success_commission_percent?: number
@@ -110,6 +112,7 @@ export type Database = {
         }
         Update: {
           available_hours_per_month?: number
+          monthly_case_count?: number
           monthly_cost_by_role?: Json
           realization_rate?: number
           success_commission_percent?: number

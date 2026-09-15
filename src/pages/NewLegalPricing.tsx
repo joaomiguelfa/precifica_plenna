@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { DirectCostsEditor } from '../components/legal/DirectCostsEditor'
 import { FeeResultCard } from '../components/legal/FeeResultCard'
-import { FixedCostAllocationField } from '../components/legal/FixedCostAllocationField'
+import { FixedCostAllocationDisplay } from '../components/legal/FixedCostAllocationDisplay'
 import { HourlyFeeResultCard } from '../components/legal/HourlyFeeResultCard'
 import { RoleAllocationsEditor } from '../components/legal/RoleAllocationsEditor'
 import { SuccessFeeResultCard } from '../components/legal/SuccessFeeResultCard'
@@ -19,9 +19,10 @@ import {
   type EmployeeProfile,
   type FixedCostProfile,
 } from '../lib/data/legalProfiles'
-import { getLegalSettings } from '../lib/data/legalSettings'
+import { createDefaultLegalOfficeSettings, getLegalSettings, type LegalOfficeSettings } from '../lib/data/legalSettings'
 import { formatBRL } from '../lib/format'
-import { calculateSelectedModels, createDefaultLegalPricingInput } from '../lib/legalPricing/calculate'
+import { calculateSelectedModels, createDefaultLegalPricingInput, round2 } from '../lib/legalPricing/calculate'
+import { exportLegalQuotePdf } from '../lib/pdf/exportLegalQuote'
 import { LEGAL_FEE_MODEL_LABELS } from '../types/legalPricing'
 import type { LegalFeeModel, LegalPricingInput } from '../types/legalPricing'
 
@@ -31,7 +32,7 @@ type PageTab = 'custos' | 'honorarios'
 
 export default function NewLegalPricing() {
   const { caseId } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   // v2: o formato do rascunho mudou (formas de honorário combináveis, dados
   // de custo compartilhados) — chave nova para não tentar reidratar um
   // rascunho antigo com o formato incompatível.
@@ -40,16 +41,21 @@ export default function NewLegalPricing() {
   const [activeTab, setActiveTab] = useState<PageTab>('custos')
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
+  const [officeSettings, setOfficeSettings] = useState<LegalOfficeSettings>(createDefaultLegalOfficeSettings())
+  const [includeBreakdown, setIncludeBreakdown] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
   useEffect(() => {
     listEmployeeProfiles().then(setEmployees).catch(() => {})
     listFixedCostProfiles().then(setFixedCosts).catch(() => {})
-    // As premissas do escritório agora só são editadas em "Perfis salvos" —
-    // aqui só lemos o valor mais atual para calcular.
+    // As premissas do escritório e o número de casos/mês agora só são
+    // editados em "Perfis salvos" — aqui só lemos o valor mais atual.
     getLegalSettings()
-      .then((assumptions) => setInput((prev) => ({ ...prev, assumptions })))
+      .then((settings) => {
+        setOfficeSettings(settings)
+        setInput((prev) => ({ ...prev, assumptions: settings.assumptions }))
+      })
       .catch(() => {})
   }, [setInput])
 
@@ -80,7 +86,7 @@ export default function NewLegalPricing() {
     setSaving(true)
     setSaveMessage(null)
     try {
-      await saveLegalCase(input, results)
+      await saveLegalCase(effectiveInput, results)
       setSaveMessage('Orçamento salvo no histórico.')
     } catch (err) {
       setSaveMessage(err instanceof Error ? `Erro ao salvar: ${err.message}` : 'Erro ao salvar.')
@@ -89,7 +95,20 @@ export default function NewLegalPricing() {
     }
   }
 
-  const results = calculateSelectedModels(input)
+  function handleExportPdf() {
+    exportLegalQuotePdf(effectiveInput, results, profile, includeBreakdown)
+  }
+
+  // O rateio de custos fixos não é mais digitado no caso — vem do total de
+  // custos fixos e do número de casos/mês cadastrados em "Perfis salvos".
+  const fixedCostsTotal = fixedCosts.reduce((sum, f) => sum + f.monthlyCost, 0)
+  const computedFixedCostAllocation =
+    fixedCosts.length > 0 && officeSettings.monthlyCaseCount > 0
+      ? round2(fixedCostsTotal / officeSettings.monthlyCaseCount)
+      : 0
+  const effectiveInput: LegalPricingInput = { ...input, fixedCostAllocation: computedFixedCostAllocation }
+
+  const results = calculateSelectedModels(effectiveInput)
   const hoursLabel =
     input.selectedModels.length === 1 && input.selectedModels[0] === 'recurring'
       ? 'Horas/mês estimadas'
@@ -169,16 +188,16 @@ export default function NewLegalPricing() {
               items={input.directCosts}
               onChange={(directCosts) => setInput({ ...input, directCosts })}
             />
-            <FixedCostAllocationField
-              value={input.fixedCostAllocation}
+            <FixedCostAllocationDisplay
               fixedCosts={fixedCosts}
-              onChange={(v) => setInput({ ...input, fixedCostAllocation: v })}
+              monthlyCaseCount={officeSettings.monthlyCaseCount}
+              value={computedFixedCostAllocation}
             />
           </Card>
 
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            As premissas do escritório (custo por cargo, horas disponíveis, tributos…) agora ficam só na aba{' '}
-            <strong>Perfis salvos</strong>.
+            As premissas do escritório (custo por cargo, horas disponíveis, tributos…) e o número de casos/mês
+            usado no rateio de custos fixos agora ficam só na aba <strong>Perfis salvos</strong>.
           </p>
         </>
       )}
@@ -282,12 +301,33 @@ export default function NewLegalPricing() {
             </Card>
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" onClick={handleExportPdf} disabled={resultCards.length === 0}>
+              Exportar orçamento (PDF)
+            </Button>
+            <button
+              type="button"
+              onClick={() => setIncludeBreakdown((v) => !v)}
+              aria-pressed={includeBreakdown}
+              title="Quando ativado, o PDF sai com o detalhamento de custos do caso, não só o valor do honorário"
+              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                includeBreakdown
+                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-300'
+                  : 'border-slate-300 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+              }`}
+            >
+              {includeBreakdown ? '✓ ' : ''}Descrição
+            </button>
             <Button onClick={handleSaveHistory} disabled={saving || resultCards.length === 0}>
               {saving ? 'Salvando…' : 'Salvar orçamento no histórico'}
             </Button>
-            {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
           </div>
+          <p className="-mt-2 text-xs text-slate-400 dark:text-slate-500">
+            {includeBreakdown
+              ? 'O PDF vai sair com o detalhamento completo dos custos do caso.'
+              : 'Ative "Descrição" para o PDF sair com o detalhamento de custos, não só o valor do honorário.'}
+          </p>
+          {saveMessage && <p className="text-sm text-slate-600 dark:text-slate-400">{saveMessage}</p>}
         </>
       )}
     </div>

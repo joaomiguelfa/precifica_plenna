@@ -17,10 +17,6 @@ interface Props {
 const ROLE_OPTIONS = Object.entries(LAWYER_ROLE_LABELS) as [LawyerRole, string][]
 
 export function RoleAllocationsEditor({ roles, assumptions, employees, onChange, hoursLabel = 'Horas estimadas' }: Props) {
-  function addRole() {
-    onChange([...roles, { id: crypto.randomUUID(), role: 'associado_senior', hours: 0 }])
-  }
-
   function addFromEmployee(employeeId: string) {
     const employee = employees.find((e) => e.id === employeeId)
     if (!employee) return
@@ -55,27 +51,26 @@ export function RoleAllocationsEditor({ roles, assumptions, employees, onChange,
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Profissionais envolvidos
         </h4>
-        <div className="flex gap-2">
-          {employees.length > 0 && (
-            <select
-              value=""
-              onChange={(e) => addFromEmployee(e.target.value)}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-            >
-              <option value="" disabled>
-                Carregar funcionário salvo…
+        {employees.length > 0 ? (
+          <select
+            value=""
+            onChange={(e) => addFromEmployee(e.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          >
+            <option value="" disabled>
+              Carregar funcionário salvo…
+            </option>
+            {employees.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name} ({LAWYER_ROLE_LABELS[e.role]}) — {formatBRL(e.monthlyCost)}/mês
               </option>
-              {employees.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name} ({LAWYER_ROLE_LABELS[e.role]}) — {formatBRL(e.monthlyCost)}/mês
-                </option>
-              ))}
-            </select>
-          )}
-          <Button type="button" size="sm" variant="secondary" onClick={addRole}>
-            + Adicionar profissional
-          </Button>
-        </div>
+            ))}
+          </select>
+        ) : (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Nenhum funcionário salvo — cadastre em "Perfis salvos" para poder adicioná-lo ao caso.
+          </p>
+        )}
       </div>
 
       {roles.length === 0 && (
