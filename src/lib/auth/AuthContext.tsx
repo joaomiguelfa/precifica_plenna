@@ -1,4 +1,4 @@
-import type { Session, User } from '@supabase/supabase-js'
+import { FunctionsHttpError, type Session, type User } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../supabase/client'
 import { onlyDigits } from '../validation/document'
@@ -155,7 +155,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirectTo: `${window.location.origin}/completar-cadastro`,
       },
     })
-    if (error) throw error
+    if (error) {
+      // A função responde com um corpo JSON { error: "mensagem em pt-BR" }
+      // mesmo em erro, mas o supabase-js não lê esse corpo sozinho — sem
+      // isso, o usuário só veria "Edge Function returned a non-2xx status
+      // code" em vez do motivo real (e-mail já cadastrado, inválido, etc.).
+      if (error instanceof FunctionsHttpError) {
+        const body = await error.context.json().catch(() => null)
+        throw new Error(body?.error || error.message)
+      }
+      throw error
+    }
     if (data?.error) throw new Error(data.error)
   }
 
