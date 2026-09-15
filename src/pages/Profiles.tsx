@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
+import { useAuth } from '../lib/auth/AuthContext'
 import {
   deleteMaterialProfile,
   deletePrinterProfile,
@@ -19,6 +20,7 @@ const emptyPrinter = { name: '', powerWatts: 0, acquisitionCost: 0, lifespanHour
 const emptyMaterial = { name: '', materialType: '', color: '', costPerKg: 0 }
 
 export default function Profiles() {
+  const { isAdmin } = useAuth()
   const [printers, setPrinters] = useState<PrinterProfile[]>([])
   const [materials, setMaterials] = useState<MaterialProfile[]>([])
   const [newPrinter, setNewPrinter] = useState(emptyPrinter)
@@ -61,34 +63,43 @@ export default function Profiles() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Compartilhados por todos os usuários deste negócio, para garantir que a precificação use sempre os mesmos
+          custos.
+          {!isAdmin && ' Somente administradores podem cadastrar, editar ou remover itens aqui.'}
+        </p>
+      </div>
 
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Impressoras</h2>
-        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
-          <TextField label="Nome" value={newPrinter.name} onChange={(v) => setNewPrinter({ ...newPrinter, name: v })} />
-          <NumberField
-            label="Potência"
-            suffix="W"
-            value={newPrinter.powerWatts}
-            onChange={(v) => setNewPrinter({ ...newPrinter, powerWatts: v })}
-          />
-          <NumberField
-            label="Valor de aquisição"
-            suffix="R$"
-            value={newPrinter.acquisitionCost}
-            onChange={(v) => setNewPrinter({ ...newPrinter, acquisitionCost: v })}
-          />
-          <NumberField
-            label="Vida útil"
-            suffix="h"
-            value={newPrinter.lifespanHours}
-            onChange={(v) => setNewPrinter({ ...newPrinter, lifespanHours: v })}
-          />
-          <Button className="self-end" onClick={addPrinter}>
-            + Adicionar
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
+            <TextField label="Nome" value={newPrinter.name} onChange={(v) => setNewPrinter({ ...newPrinter, name: v })} />
+            <NumberField
+              label="Potência"
+              suffix="W"
+              value={newPrinter.powerWatts}
+              onChange={(v) => setNewPrinter({ ...newPrinter, powerWatts: v })}
+            />
+            <NumberField
+              label="Valor de aquisição"
+              suffix="R$"
+              value={newPrinter.acquisitionCost}
+              onChange={(v) => setNewPrinter({ ...newPrinter, acquisitionCost: v })}
+            />
+            <NumberField
+              label="Vida útil"
+              suffix="h"
+              value={newPrinter.lifespanHours}
+              onChange={(v) => setNewPrinter({ ...newPrinter, lifespanHours: v })}
+            />
+            <Button className="self-end" onClick={addPrinter}>
+              + Adicionar
+            </Button>
+          </div>
+        )}
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {printers.map((p) => (
             <li key={p.id} className="flex items-center justify-between py-2 text-sm">
@@ -98,9 +109,11 @@ export default function Profiles() {
                   {p.powerWatts}W · {formatBRL(p.acquisitionCost)} · {p.lifespanHours}h de vida útil
                 </p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => deletePrinterProfile(p.id).then(refresh)}>
-                Remover
-              </Button>
+              {isAdmin && (
+                <Button variant="danger" size="sm" onClick={() => deletePrinterProfile(p.id).then(refresh)}>
+                  Remover
+                </Button>
+              )}
             </li>
           ))}
           {printers.length === 0 && <p className="py-2 text-sm text-slate-400 dark:text-slate-500">Nenhuma impressora salva.</p>}
@@ -109,25 +122,27 @@ export default function Profiles() {
 
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Materiais</h2>
-        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
-          <TextField label="Nome" value={newMaterial.name} onChange={(v) => setNewMaterial({ ...newMaterial, name: v })} />
-          <TextField
-            label="Tipo"
-            value={newMaterial.materialType}
-            onChange={(v) => setNewMaterial({ ...newMaterial, materialType: v })}
-            placeholder="PLA, PETG, ABS…"
-          />
-          <TextField label="Cor" value={newMaterial.color} onChange={(v) => setNewMaterial({ ...newMaterial, color: v })} />
-          <NumberField
-            label="Custo/kg"
-            suffix="R$"
-            value={newMaterial.costPerKg}
-            onChange={(v) => setNewMaterial({ ...newMaterial, costPerKg: v })}
-          />
-          <Button className="self-end" onClick={addMaterial}>
-            + Adicionar
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
+            <TextField label="Nome" value={newMaterial.name} onChange={(v) => setNewMaterial({ ...newMaterial, name: v })} />
+            <TextField
+              label="Tipo"
+              value={newMaterial.materialType}
+              onChange={(v) => setNewMaterial({ ...newMaterial, materialType: v })}
+              placeholder="PLA, PETG, ABS…"
+            />
+            <TextField label="Cor" value={newMaterial.color} onChange={(v) => setNewMaterial({ ...newMaterial, color: v })} />
+            <NumberField
+              label="Custo/kg"
+              suffix="R$"
+              value={newMaterial.costPerKg}
+              onChange={(v) => setNewMaterial({ ...newMaterial, costPerKg: v })}
+            />
+            <Button className="self-end" onClick={addMaterial}>
+              + Adicionar
+            </Button>
+          </div>
+        )}
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {materials.map((m) => (
             <li key={m.id} className="flex items-center justify-between py-2 text-sm">
@@ -137,9 +152,11 @@ export default function Profiles() {
                   {[m.materialType, m.color].filter(Boolean).join(' · ')} — {formatBRL(m.costPerKg)}/kg
                 </p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => deleteMaterialProfile(m.id).then(refresh)}>
-                Remover
-              </Button>
+              {isAdmin && (
+                <Button variant="danger" size="sm" onClick={() => deleteMaterialProfile(m.id).then(refresh)}>
+                  Remover
+                </Button>
+              )}
             </li>
           ))}
           {materials.length === 0 && <p className="py-2 text-sm text-slate-400 dark:text-slate-500">Nenhum material salvo.</p>}

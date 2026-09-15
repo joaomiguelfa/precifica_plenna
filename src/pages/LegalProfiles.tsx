@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { NumberField } from '../components/ui/NumberField'
 import { TextField } from '../components/ui/TextField'
+import { useAuth } from '../lib/auth/AuthContext'
 import {
   deleteEmployeeProfile,
   deleteFixedCostProfile,
@@ -34,6 +35,7 @@ const emptyEmployee: { name: string; role: LawyerRole; monthlyCost: number } = {
 const emptyFixedCost = { name: '', monthlyCost: 0 }
 
 export default function LegalProfiles() {
+  const { isAdmin } = useAuth()
   const [employees, setEmployees] = useState<EmployeeProfile[]>([])
   const [fixedCosts, setFixedCosts] = useState<FixedCostProfile[]>([])
   const [officeSettings, setOfficeSettings] = useState<LegalOfficeSettings>(createDefaultLegalOfficeSettings())
@@ -100,51 +102,63 @@ export default function LegalProfiles() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Perfis salvos</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Compartilhados por todos os usuários deste negócio, para garantir que a precificação use sempre os mesmos
+          custos.
+          {!isAdmin && ' Somente administradores podem cadastrar, editar ou remover itens aqui.'}
+        </p>
+      </div>
 
       <Card className="divide-y divide-slate-200 dark:divide-slate-800">
         <PracticeAssumptionsPanel
           assumptions={officeSettings.assumptions}
           onChange={(assumptions) => setOfficeSettings({ ...officeSettings, assumptions })}
+          readOnly={!isAdmin}
         />
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          <Button onClick={handleSaveAssumptions}>Salvar premissas</Button>
-          {assumptionsStatus && <p className="text-sm text-slate-600 dark:text-slate-400">{assumptionsStatus}</p>}
-        </div>
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-3 p-4">
+            <Button onClick={handleSaveAssumptions}>Salvar premissas</Button>
+            {assumptionsStatus && <p className="text-sm text-slate-600 dark:text-slate-400">{assumptionsStatus}</p>}
+          </div>
+        )}
       </Card>
 
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Funcionários</h2>
-        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-4">
-          <TextField
-            label="Nome"
-            value={newEmployee.name}
-            onChange={(v) => setNewEmployee({ ...newEmployee, name: v })}
-          />
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">Cargo</span>
-            <select
-              value={newEmployee.role}
-              onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as LawyerRole })}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            >
-              {ROLE_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <NumberField
-            label="Custo mensal"
-            suffix="R$"
-            value={newEmployee.monthlyCost}
-            onChange={(v) => setNewEmployee({ ...newEmployee, monthlyCost: v })}
-          />
-          <Button className="self-end" onClick={addEmployee}>
-            + Adicionar
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-4">
+            <TextField
+              label="Nome"
+              value={newEmployee.name}
+              onChange={(v) => setNewEmployee({ ...newEmployee, name: v })}
+            />
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700 dark:text-slate-300">Cargo</span>
+              <select
+                value={newEmployee.role}
+                onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as LawyerRole })}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                {ROLE_OPTIONS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <NumberField
+              label="Custo mensal"
+              suffix="R$"
+              value={newEmployee.monthlyCost}
+              onChange={(v) => setNewEmployee({ ...newEmployee, monthlyCost: v })}
+            />
+            <Button className="self-end" onClick={addEmployee}>
+              + Adicionar
+            </Button>
+          </div>
+        )}
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {employees.map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
@@ -156,9 +170,11 @@ export default function LegalProfiles() {
                 <span className="whitespace-nowrap text-sm font-semibold text-indigo-700 dark:text-indigo-400">
                   {formatBRL(e.monthlyCost)}/mês
                 </span>
-                <Button variant="danger" size="sm" onClick={() => deleteEmployeeProfile(e.id).then(refresh)}>
-                  Remover
-                </Button>
+                {isAdmin && (
+                  <Button variant="danger" size="sm" onClick={() => deleteEmployeeProfile(e.id).then(refresh)}>
+                    Remover
+                  </Button>
+                )}
               </div>
             </li>
           ))}
@@ -174,23 +190,25 @@ export default function LegalProfiles() {
           Ex.: condomínio, energia, aluguel, softwares de escritório — custos que não variam por caso e são
           rateados entre os casos do mês.
         </p>
-        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <TextField
-            label="Nome"
-            value={newFixedCost.name}
-            onChange={(v) => setNewFixedCost({ ...newFixedCost, name: v })}
-            placeholder="Ex.: Condomínio, Energia elétrica…"
-          />
-          <NumberField
-            label="Custo mensal"
-            suffix="R$"
-            value={newFixedCost.monthlyCost}
-            onChange={(v) => setNewFixedCost({ ...newFixedCost, monthlyCost: v })}
-          />
-          <Button className="self-end" onClick={addFixedCost}>
-            + Adicionar
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <TextField
+              label="Nome"
+              value={newFixedCost.name}
+              onChange={(v) => setNewFixedCost({ ...newFixedCost, name: v })}
+              placeholder="Ex.: Condomínio, Energia elétrica…"
+            />
+            <NumberField
+              label="Custo mensal"
+              suffix="R$"
+              value={newFixedCost.monthlyCost}
+              onChange={(v) => setNewFixedCost({ ...newFixedCost, monthlyCost: v })}
+            />
+            <Button className="self-end" onClick={addFixedCost}>
+              + Adicionar
+            </Button>
+          </div>
+        )}
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {fixedCosts.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3 py-2 text-sm">
@@ -199,9 +217,11 @@ export default function LegalProfiles() {
                 <span className="whitespace-nowrap text-sm font-semibold text-indigo-700 dark:text-indigo-400">
                   {formatBRL(f.monthlyCost)}/mês
                 </span>
-                <Button variant="danger" size="sm" onClick={() => deleteFixedCostProfile(f.id).then(refresh)}>
-                  Remover
-                </Button>
+                {isAdmin && (
+                  <Button variant="danger" size="sm" onClick={() => deleteFixedCostProfile(f.id).then(refresh)}>
+                    Remover
+                  </Button>
+                )}
               </div>
             </li>
           ))}
@@ -217,8 +237,9 @@ export default function LegalProfiles() {
               value={officeSettings.monthlyCaseCount}
               onChange={(v) => setOfficeSettings({ ...officeSettings, monthlyCaseCount: v })}
               className="max-w-xs"
+              disabled={!isAdmin}
             />
-            <Button onClick={handleSaveMonthlyCaseCount}>Salvar</Button>
+            {isAdmin && <Button onClick={handleSaveMonthlyCaseCount}>Salvar</Button>}
             {fixedCostSettingsStatus && (
               <p className="text-sm text-slate-600 dark:text-slate-400">{fixedCostSettingsStatus}</p>
             )}

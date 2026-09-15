@@ -88,37 +88,40 @@ export type Database = {
       bbcs_settings: {
         Row: {
           available_hours_per_month: number
+          id: boolean
           monthly_case_count: number
           monthly_cost_by_role: Json
           realization_rate: number
           success_commission_percent: number
           tax_burden_percent: number
           updated_at: string
-          user_id: string
+          user_id: string | null
           utilization_rate: number
           write_off_percent: number
         }
         Insert: {
           available_hours_per_month?: number
+          id?: boolean
           monthly_case_count?: number
           monthly_cost_by_role?: Json
           realization_rate?: number
           success_commission_percent?: number
           tax_burden_percent?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           utilization_rate?: number
           write_off_percent?: number
         }
         Update: {
           available_hours_per_month?: number
+          id?: boolean
           monthly_case_count?: number
           monthly_cost_by_role?: Json
           realization_rate?: number
           success_commission_percent?: number
           tax_burden_percent?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           utilization_rate?: number
           write_off_percent?: number
         }
@@ -126,7 +129,7 @@ export type Database = {
           {
             foreignKeyName: "bbcs_settings_profile_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "pricing3d_profiles"
             referencedColumns: ["id"]
           },
@@ -360,8 +363,9 @@ export type Database = {
           default_tax_percent: number
           default_waste_percent: number
           energy_tariff_per_kwh: number
+          id: boolean
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           currency?: string
@@ -370,8 +374,9 @@ export type Database = {
           default_tax_percent?: number
           default_waste_percent?: number
           energy_tariff_per_kwh?: number
+          id?: boolean
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           currency?: string
@@ -380,8 +385,9 @@ export type Database = {
           default_tax_percent?: number
           default_waste_percent?: number
           energy_tariff_per_kwh?: number
+          id?: boolean
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

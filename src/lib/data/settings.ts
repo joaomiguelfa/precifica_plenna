@@ -35,6 +35,7 @@ export async function getSettings(): Promise<AppSettings> {
 export async function saveSettings(settings: AppSettings) {
   const { error } = await supabase.from('pricing3d_settings').upsert(
     {
+      id: true,
       energy_tariff_per_kwh: settings.energyTariffPerKwh,
       default_platform_fee_percent: settings.defaultPlatformFeePercent,
       default_payment_fee_percent: settings.defaultPaymentFeePercent,
@@ -43,7 +44,7 @@ export async function saveSettings(settings: AppSettings) {
       currency: settings.currency,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id' },
+    { onConflict: 'id' },
   )
   if (error) throw error
 }

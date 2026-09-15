@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { NumberField } from '../components/ui/NumberField'
+import { useAuth } from '../lib/auth/AuthContext'
 import { DEFAULT_SETTINGS, getSettings, saveSettings, type AppSettings } from '../lib/data/settings'
 
 export default function Settings() {
+  const { isAdmin } = useAuth()
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<string | null>(null)
@@ -31,8 +33,9 @@ export default function Settings() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Configurações</h1>
       <p className="text-sm text-slate-500 dark:text-slate-400">
-        Esses valores são usados como padrão para novos cálculos de precificação (podem ser ajustados peça a
-        peça).
+        Esses valores são compartilhados por todos os usuários deste negócio e usados como padrão em todo novo
+        cálculo de precificação — assim a precificação não varia de usuário para usuário.
+        {!isAdmin && ' Somente administradores podem alterá-los.'}
       </p>
 
       <Card className="space-y-4 p-5">
@@ -42,33 +45,38 @@ export default function Settings() {
             suffix="R$/kWh"
             value={settings.energyTariffPerKwh}
             onChange={(v) => setSettings({ ...settings, energyTariffPerKwh: v })}
+            disabled={!isAdmin}
           />
           <NumberField
             label="Percentual de desperdício padrão"
             suffix="%"
             value={settings.defaultWastePercent}
             onChange={(v) => setSettings({ ...settings, defaultWastePercent: v })}
+            disabled={!isAdmin}
           />
           <NumberField
             label="Taxa de plataforma padrão"
             suffix="%"
             value={settings.defaultPlatformFeePercent}
             onChange={(v) => setSettings({ ...settings, defaultPlatformFeePercent: v })}
+            disabled={!isAdmin}
           />
           <NumberField
             label="Taxa de cartão/gateway padrão"
             suffix="%"
             value={settings.defaultPaymentFeePercent}
             onChange={(v) => setSettings({ ...settings, defaultPaymentFeePercent: v })}
+            disabled={!isAdmin}
           />
           <NumberField
             label="Imposto padrão"
             suffix="%"
             value={settings.defaultTaxPercent}
             onChange={(v) => setSettings({ ...settings, defaultTaxPercent: v })}
+            disabled={!isAdmin}
           />
         </div>
-        <Button onClick={handleSave}>Salvar configurações</Button>
+        {isAdmin && <Button onClick={handleSave}>Salvar configurações</Button>}
         {status && <p className="text-sm text-slate-600 dark:text-slate-400">{status}</p>}
       </Card>
     </div>

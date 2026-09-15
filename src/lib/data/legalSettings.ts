@@ -33,6 +33,7 @@ export async function getLegalSettings(): Promise<LegalOfficeSettings> {
 export async function saveLegalSettings(settings: LegalOfficeSettings) {
   const { error } = await supabase.from('bbcs_settings').upsert(
     {
+      id: true,
       monthly_cost_by_role: settings.assumptions.monthlyCostByRole,
       available_hours_per_month: settings.assumptions.availableHoursPerMonth,
       utilization_rate: settings.assumptions.utilizationRate,
@@ -43,7 +44,7 @@ export async function saveLegalSettings(settings: LegalOfficeSettings) {
       monthly_case_count: settings.monthlyCaseCount,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id' },
+    { onConflict: 'id' },
   )
   if (error) throw error
 }
