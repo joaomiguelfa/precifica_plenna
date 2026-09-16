@@ -5,10 +5,13 @@
  * carga tributária efetiva, comissão sobre êxito e provisão para
  * cancelamentos/glosas.
  *
- * As 4 formas de honorário compartilham os mesmos dados de entrada do caso
- * (profissionais/horas, custos diretos, rateio de custos fixos e margem) —
- * um caso pode combinar mais de uma forma ao mesmo tempo (ex.: parte por
- * hora + parte de êxito), cada uma calculada lado a lado.
+ * Um caso pode combinar mais de uma forma de honorário ao mesmo tempo (ex.:
+ * parte por hora + parte de êxito). Profissionais/horas, custos diretos e
+ * rateio de custos fixos são informados em separado PARA CADA forma
+ * selecionada — não compartilhados entre elas — para que o custo do caso
+ * não seja "recuperado" mais de uma vez ao somar os honorários de formas
+ * diferentes. Só a margem e as premissas do escritório são compartilhadas,
+ * já que são percentuais/taxas, não um valor de custo que se acumula.
  */
 
 export type LegalFeeModel = 'hourly' | 'recurring' | 'success' | 'adhoc'
@@ -67,7 +70,7 @@ export interface DirectCostItem {
 }
 
 // ---------------------------------------------------------------------------
-// Dados de custo compartilhados por todas as formas de honorário de um caso
+// Dados de custo — um conjunto próprio por forma de honorário selecionada
 // ---------------------------------------------------------------------------
 
 export interface CaseCostInputs {
@@ -75,6 +78,13 @@ export interface CaseCostInputs {
   directCosts: DirectCostItem[]
   fixedCostAllocation: number
   marginPercent: number
+}
+
+/** Profissionais/horas, custos diretos e rateio de custos fixos atribuídos a uma única forma de honorário do caso. */
+export interface ModelCostAllocation {
+  roles: RoleAllocation[]
+  directCosts: DirectCostItem[]
+  fixedCostAllocation: number
 }
 
 // ---------------------------------------------------------------------------
@@ -147,11 +157,8 @@ export interface LegalPricingInput {
   /** Formas de honorário aplicadas a este caso — pode ser mais de uma. */
   selectedModels: LegalFeeModel[]
   assumptions: PracticeAssumptions
-  /** Profissionais/horas do caso — compartilhado por todas as formas selecionadas. */
-  roles: RoleAllocation[]
-  /** Custos diretos do caso — compartilhado por todas as formas selecionadas. */
-  directCosts: DirectCostItem[]
-  fixedCostAllocation: number
+  /** Custos (profissionais/horas, diretos, rateio) de cada forma de honorário — um conjunto por forma, nunca somados em dobro. */
+  costsByModel: Record<LegalFeeModel, ModelCostAllocation>
   marginPercent: number
   /** Usado somente quando "Êxito" está selecionado. */
   caseValue: number

@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import { formatBRL, formatPercent } from '../format'
-import { LAWYER_ROLE_LABELS } from '../../types/legalPricing'
+import { LAWYER_ROLE_LABELS, LEGAL_FEE_MODEL_LABELS } from '../../types/legalPricing'
 import type { CombinedLegalResult, LegalPricingInput } from '../../types/legalPricing'
 
 function modelResultRows(results: CombinedLegalResult) {
@@ -98,68 +98,67 @@ export function exportLegalQuotePdf(
   }
 
   if (includeBreakdown) {
-    const costBreakdown =
-      results.hourly?.costBreakdown ??
-      results.recurring?.costBreakdown ??
-      results.success?.costBreakdown ??
-      results.adhoc?.costBreakdown
+    for (const model of input.selectedModels) {
+      const costs = input.costsByModel[model]
+      const costBreakdown = results[model]?.costBreakdown
 
-    y += 6
-    doc.setDrawColor(220)
-    doc.line(marginX, y, pageWidth - marginX, y)
-    y += 10
+      y += 6
+      doc.setDrawColor(220)
+      doc.line(marginX, y, pageWidth - marginX, y)
+      y += 10
 
-    doc.setFontSize(13)
-    doc.setTextColor(20)
-    doc.text('Descrição — custos do caso', marginX, y)
-    y += 9
-
-    if (input.roles.length > 0) {
-      doc.setFontSize(10.5)
-      doc.setTextColor(90)
-      for (const role of input.roles) {
-        ensureSpace(7)
-        const label = role.employeeName ? `${role.employeeName} (${LAWYER_ROLE_LABELS[role.role]})` : LAWYER_ROLE_LABELS[role.role]
-        doc.text(`${label} — ${role.hours}h`, marginX, y)
-        y += 7
-      }
-      ensureSpace(8)
+      doc.setFontSize(13)
       doc.setTextColor(20)
-      doc.text('Subtotal mão de obra', marginX, y)
-      doc.text(formatBRL(costBreakdown?.laborCost ?? 0), pageWidth - marginX, y, { align: 'right' })
+      doc.text(`Descrição — custos de "${LEGAL_FEE_MODEL_LABELS[model]}"`, marginX, y)
       y += 9
-    }
 
-    if (input.directCosts.length > 0) {
+      if (costs.roles.length > 0) {
+        doc.setFontSize(10.5)
+        doc.setTextColor(90)
+        for (const role of costs.roles) {
+          ensureSpace(7)
+          const label = role.employeeName ? `${role.employeeName} (${LAWYER_ROLE_LABELS[role.role]})` : LAWYER_ROLE_LABELS[role.role]
+          doc.text(`${label} — ${role.hours}h`, marginX, y)
+          y += 7
+        }
+        ensureSpace(8)
+        doc.setTextColor(20)
+        doc.text('Subtotal mão de obra', marginX, y)
+        doc.text(formatBRL(costBreakdown?.laborCost ?? 0), pageWidth - marginX, y, { align: 'right' })
+        y += 9
+      }
+
+      if (costs.directCosts.length > 0) {
+        doc.setFontSize(10.5)
+        doc.setTextColor(90)
+        for (const item of costs.directCosts) {
+          ensureSpace(7)
+          doc.text(item.name || 'Custo direto', marginX, y)
+          doc.setTextColor(20)
+          doc.text(formatBRL(item.cost), pageWidth - marginX, y, { align: 'right' })
+          doc.setTextColor(90)
+          y += 7
+        }
+        y += 2
+      }
+
+      ensureSpace(7)
       doc.setFontSize(10.5)
       doc.setTextColor(90)
-      for (const item of input.directCosts) {
-        ensureSpace(7)
-        doc.text(item.name || 'Custo direto', marginX, y)
-        doc.setTextColor(20)
-        doc.text(formatBRL(item.cost), pageWidth - marginX, y, { align: 'right' })
-        doc.setTextColor(90)
-        y += 7
-      }
-      y += 2
+      doc.text('Rateio de custos fixos', marginX, y)
+      doc.setTextColor(20)
+      doc.text(formatBRL(costs.fixedCostAllocation), pageWidth - marginX, y, { align: 'right' })
+      y += 9
+
+      ensureSpace(9)
+      doc.setDrawColor(180)
+      doc.line(marginX, y - 4, pageWidth - marginX, y - 4)
+      doc.setFontSize(11)
+      doc.setTextColor(20)
+      doc.text('Custo total desta forma', marginX, y)
+      doc.text(formatBRL(costBreakdown?.totalCost ?? 0), pageWidth - marginX, y, { align: 'right' })
+      y += 12
     }
-
-    ensureSpace(7)
-    doc.setFontSize(10.5)
-    doc.setTextColor(90)
-    doc.text('Rateio de custos fixos', marginX, y)
-    doc.setTextColor(20)
-    doc.text(formatBRL(costBreakdown?.fixedCostAllocation ?? 0), pageWidth - marginX, y, { align: 'right' })
-    y += 9
-
-    ensureSpace(9)
-    doc.setDrawColor(180)
-    doc.line(marginX, y - 4, pageWidth - marginX, y - 4)
-    doc.setFontSize(11)
-    doc.setTextColor(20)
-    doc.text('Custo total do caso', marginX, y)
-    doc.text(formatBRL(costBreakdown?.totalCost ?? 0), pageWidth - marginX, y, { align: 'right' })
-    y += 12
 
     doc.setFontSize(10.5)
     doc.setTextColor(90)

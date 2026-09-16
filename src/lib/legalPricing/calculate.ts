@@ -6,7 +6,9 @@ import type {
   FeeCostBreakdown,
   HourlyFeeResult,
   LawyerRole,
+  LegalFeeModel,
   LegalPricingInput,
+  ModelCostAllocation,
   PracticeAssumptions,
   RecurringFeeResult,
   RoleAllocation,
@@ -210,26 +212,38 @@ export function calculateAdhocFee(inputs: CaseCostInputs, assumptions: PracticeA
 
 // ---------------------------------------------------------------------------
 // Combinação: um caso pode usar mais de uma forma de honorário ao mesmo
-// tempo (ex.: parte por hora + parte de êxito), todas alimentadas pelos
-// mesmos dados de custo do caso.
+// tempo (ex.: parte por hora + parte de êxito) — cada forma usa APENAS os
+// custos atribuídos a ela em `costsByModel`, nunca o custo do caso inteiro,
+// para não recuperar o mesmo custo mais de uma vez ao somar os honorários.
 // ---------------------------------------------------------------------------
 
-export function calculateSelectedModels(input: LegalPricingInput): CombinedLegalResult {
-  const caseCostInputs: CaseCostInputs = {
-    roles: input.roles,
-    directCosts: input.directCosts,
-    fixedCostAllocation: input.fixedCostAllocation,
+function costInputsFor(model: LegalFeeModel, input: LegalPricingInput): CaseCostInputs {
+  const c = input.costsByModel[model]
+  return {
+    roles: c.roles,
+    directCosts: c.directCosts,
+    fixedCostAllocation: c.fixedCostAllocation,
     marginPercent: input.marginPercent,
   }
+}
 
-  const hourly = input.selectedModels.includes('hourly') ? calculateHourlyFee(caseCostInputs, input.assumptions) : null
-  const recurring = input.selectedModels.includes('recurring')
-    ? calculateRecurringFee(caseCostInputs, input.assumptions)
+export function calculateSelectedModels(input: LegalPricingInput): CombinedLegalResult {
+  const hourly = input.selectedModels.includes('hourly')
+    ? calculateHourlyFee(costInputsFor('hourly', input), input.assumptions)
     : null
-  const adhoc = input.selectedModels.includes('adhoc') ? calculateAdhocFee(caseCostInputs, input.assumptions) : null
+  const recurring = input.selectedModels.includes('recurring')
+    ? calculateRecurringFee(costInputsFor('recurring', input), input.assumptions)
+    : null
+  const adhoc = input.selectedModels.includes('adhoc')
+    ? calculateAdhocFee(costInputsFor('adhoc', input), input.assumptions)
+    : null
   const success = input.selectedModels.includes('success')
     ? calculateSuccessFee(
-        { ...caseCostInputs, caseValue: input.caseValue, successProbabilityPercent: input.successProbabilityPercent },
+        {
+          ...costInputsFor('success', input),
+          caseValue: input.caseValue,
+          successProbabilityPercent: input.successProbabilityPercent,
+        },
         input.assumptions,
       )
     : null
@@ -272,14 +286,21 @@ export function createDefaultPracticeAssumptions(): PracticeAssumptions {
   }
 }
 
+export function createEmptyModelCostAllocation(): ModelCostAllocation {
+  return { roles: [], directCosts: [], fixedCostAllocation: 0 }
+}
+
 export function createDefaultLegalPricingInput(): LegalPricingInput {
   return {
     caseName: '',
     selectedModels: ['hourly'],
     assumptions: createDefaultPracticeAssumptions(),
-    roles: [],
-    directCosts: [],
-    fixedCostAllocation: 0,
+    costsByModel: {
+      hourly: createEmptyModelCostAllocation(),
+      recurring: createEmptyModelCostAllocation(),
+      success: createEmptyModelCostAllocation(),
+      adhoc: createEmptyModelCostAllocation(),
+    },
     marginPercent: 20,
     caseValue: 0,
     successProbabilityPercent: 50,

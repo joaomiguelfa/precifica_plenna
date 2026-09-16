@@ -1,20 +1,45 @@
 import type { FixedCostProfile } from '../../lib/data/legalProfiles'
 import { formatBRL } from '../../lib/format'
+import { NumberField } from '../ui/NumberField'
 
 interface Props {
   fixedCosts: FixedCostProfile[]
   monthlyCaseCount: number
   value: number
+  /** Quando há mais de uma forma de honorário selecionada, cada uma recebe sua própria fatia do rateio total. */
+  editable?: boolean
+  onChange?: (value: number) => void
 }
 
 /**
- * Somente leitura: o rateio de custos fixos não é mais digitado por caso —
- * é calculado a partir do total de custos fixos e do número de casos/mês
- * cadastrados em "Perfis salvos".
+ * Com uma só forma de honorário selecionada, o rateio não é digitado — é
+ * calculado sozinho a partir do total de custos fixos e do número de
+ * casos/mês cadastrados em "Perfis salvos". Com mais de uma forma
+ * selecionada, cada uma precisa da sua própria fatia desse total (editável),
+ * para não recuperar o mesmo rateio mais de uma vez.
  */
-export function FixedCostAllocationDisplay({ fixedCosts, monthlyCaseCount, value }: Props) {
+export function FixedCostAllocationDisplay({ fixedCosts, monthlyCaseCount, value, editable = false, onChange }: Props) {
   const total = fixedCosts.reduce((sum, f) => sum + f.monthlyCost, 0)
   const canCalculate = fixedCosts.length > 0 && monthlyCaseCount > 0
+
+  if (editable) {
+    return (
+      <div>
+        <NumberField
+          label="Rateio de custos fixos atribuído a esta forma"
+          suffix="R$"
+          value={value}
+          onChange={(v) => onChange?.(v)}
+        />
+        {canCalculate && (
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Rateio total do caso: {formatBRL(total / monthlyCaseCount)} — divida entre as formas marcadas, sem
+            repetir o valor em cada uma.
+          </p>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div>

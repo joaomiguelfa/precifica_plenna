@@ -200,7 +200,10 @@ describe('calculateSelectedModels', () => {
       ...createDefaultLegalPricingInput(),
       assumptions,
       selectedModels: ['hourly'],
-      roles: [role('1', 'socio', 10)],
+      costsByModel: {
+        ...createDefaultLegalPricingInput().costsByModel,
+        hourly: { roles: [role('1', 'socio', 10)], directCosts: [], fixedCostAllocation: 0 },
+      },
     }
     const result = calculateSelectedModels(input)
     expect(result.hourly).not.toBeNull()
@@ -214,7 +217,10 @@ describe('calculateSelectedModels', () => {
       ...createDefaultLegalPricingInput(),
       assumptions,
       selectedModels: ['hourly', 'success'],
-      roles: [role('1', 'associado_senior', 10)],
+      costsByModel: {
+        ...createDefaultLegalPricingInput().costsByModel,
+        hourly: { roles: [role('1', 'associado_senior', 10)], directCosts: [], fixedCostAllocation: 0 },
+      },
       caseValue: 100000,
       successProbabilityPercent: 50,
     }
@@ -237,5 +243,55 @@ describe('calculateSelectedModels', () => {
     const result = calculateSelectedModels(input)
     expect(result.success!.isValid).toBe(false)
     expect(result.estimatedTotalRevenue).toBeNull()
+  })
+
+  it('não soma o mesmo custo duas vezes quando duas formas são combinadas — cada uma usa só o custo atribuído a ela', () => {
+    // Mesmas 10h de associado sênior, mas atribuídas SÓ à forma "por hora";
+    // a forma "êxito" não tem nenhum custo atribuído a ela neste caso.
+    const laborCost10h = 10 * hourlyCostForRole('associado_senior', assumptions)
+    const input: LegalPricingInput = {
+      ...createDefaultLegalPricingInput(),
+      assumptions,
+      selectedModels: ['hourly', 'success'],
+      costsByModel: {
+        ...createDefaultLegalPricingInput().costsByModel,
+        hourly: { roles: [role('1', 'associado_senior', 10)], directCosts: [], fixedCostAllocation: 0 },
+        success: { roles: [], directCosts: [], fixedCostAllocation: 0 },
+      },
+      caseValue: 100000,
+      successProbabilityPercent: 50,
+    }
+    const result = calculateSelectedModels(input)
+    // O custo da forma "por hora" reflete só as 10h atribuídas a ela...
+    expect(result.hourly!.costBreakdown.laborCost).toBeCloseTo(laborCost10h, 1)
+    // ...e a forma "êxito", sem nenhum custo atribuído a ela, não deveria cobrar nada por êxito
+    // (se o custo de "por hora" vazasse para cá, isso não seria zero).
+    expect(result.success!.costBreakdown.totalCost).toBe(0)
+    expect(result.success!.amountIfWon).toBe(0)
+  })
+
+  it('duas formas com custos atribuídos separadamente somam os dois custos, não um custo duplicado', () => {
+    const hourlyLabor = 10 * hourlyCostForRole('associado_senior', assumptions)
+    const successLabor = 5 * hourlyCostForRole('socio', assumptions)
+    const input: LegalPricingInput = {
+      ...createDefaultLegalPricingInput(),
+      assumptions,
+      selectedModels: ['hourly', 'success'],
+      marginPercent: 0,
+      costsByModel: {
+        ...createDefaultLegalPricingInput().costsByModel,
+        hourly: { roles: [role('1', 'associado_senior', 10)], directCosts: [], fixedCostAllocation: 0 },
+        success: { roles: [role('1', 'socio', 5)], directCosts: [], fixedCostAllocation: 0 },
+      },
+      caseValue: 1000000,
+      successProbabilityPercent: 100,
+    }
+    const result = calculateSelectedModels({ ...input, assumptions: { ...assumptions, taxBurdenPercent: 0, writeOffPercent: 0, successCommissionPercent: 0 } })
+    expect(result.hourly!.costBreakdown.laborCost).toBeCloseTo(hourlyLabor, 1)
+    expect(result.success!.costBreakdown.laborCost).toBeCloseTo(successLabor, 1)
+    // Cada forma recupera só o próprio custo (100% de probabilidade e 0% de
+    // margem/tributos/comissão fazem o preço de êxito bater exatamente o
+    // custo daquela forma) — a soma não duplica nenhum dos dois.
+    expect(result.estimatedTotalRevenue).toBeCloseTo(hourlyLabor + successLabor, 0)
   })
 })
