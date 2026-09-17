@@ -150,7 +150,7 @@ export default function NewPricing() {
             title="2. Energia elétrica"
             badge={<span className="text-xs text-slate-500 dark:text-slate-400">{formatBRL(result.costBreakdown.energyCost)}</span>}
           >
-            <EnergySectionForm input={input} update={update} />
+            <EnergySectionForm input={input} update={update} printerProfiles={printerProfiles} />
           </CollapsibleSection>
 
           <CollapsibleSection
