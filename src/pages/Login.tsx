@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { PlennaMark } from '../components/ui/PlennaMark'
 import { useAuth } from '../lib/auth/AuthContext'
 
 export default function Login() {
@@ -32,7 +33,7 @@ export default function Login() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center">
       <div className="mb-6 text-center">
-        <p className="text-2xl">🖨️</p>
+        <PlennaMark className="mx-auto h-10 w-10" />
         <h1 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Entrar no Precifica.Plenna</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">Cada conta tem seus próprios perfis, histórico e configurações.</p>
       </div>

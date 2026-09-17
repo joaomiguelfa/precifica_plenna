@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { PlennaMark } from '../components/ui/PlennaMark'
 import { useAuth } from '../lib/auth/AuthContext'
 import { documentLabel, formatDocument, isValidDocument } from '../lib/validation/document'
 import { PASSWORD_HINT, passwordError } from '../lib/validation/password'
@@ -46,7 +47,7 @@ export default function CompleteProfile() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center py-8">
       <div className="mb-6 text-center">
-        <p className="text-2xl">🖨️</p>
+        <PlennaMark className="mx-auto h-10 w-10" />
         <h1 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Complete seu cadastro</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Falta pouco — confirme seus dados e defina uma senha para acessar o Precifica.Plenna.

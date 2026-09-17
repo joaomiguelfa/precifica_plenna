@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { PlennaMark } from './components/ui/PlennaMark'
 import { useAuth } from './lib/auth/AuthContext'
 import { SEGMENT_LABELS, useSegment, type BusinessSegment } from './lib/segment/SegmentContext'
 import { useTheme } from './lib/theme/ThemeContext'
@@ -79,9 +80,11 @@ function Header() {
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-            <span aria-hidden="true">{segment === 'bbcs_advocacia' ? '⚖️' : '🖨️'}</span>
-            <span>Precifica.Plenna</span>
+          <div className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-slate-100">
+            <PlennaMark className="h-8 w-8 shrink-0" />
+            <span>
+              Precifica<span className="text-indigo-600 dark:text-indigo-400">.Plenna</span>
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {session && profileComplete && <SegmentSelect />}
