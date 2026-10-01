@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-export type BusinessSegment = 'impressao3d' | 'bbcs_advocacia'
+export type BusinessSegment = 'impressao3d' | 'bbcs_advocacia' | 'revenda'
 
 export const SEGMENT_LABELS: Record<BusinessSegment, string> = {
   impressao3d: 'Precifica3D (Impressão 3D)',
   bbcs_advocacia: 'BBCS Advocacia (Honorários)',
+  revenda: 'Revenda (Mercado Livre e outras)',
 }
 
 const STORAGE_KEY = 'precificacao3d:segment'
@@ -12,7 +13,7 @@ const STORAGE_KEY = 'precificacao3d:segment'
 function getInitialSegment(): BusinessSegment {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored === 'impressao3d' || stored === 'bbcs_advocacia') return stored
+    if (stored === 'impressao3d' || stored === 'bbcs_advocacia' || stored === 'revenda') return stored
   } catch {
     // localStorage indisponível: segue com o padrão
   }

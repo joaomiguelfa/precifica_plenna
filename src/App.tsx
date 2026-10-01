@@ -15,6 +15,7 @@ import LegalProfiles from './pages/LegalProfiles'
 import Login from './pages/Login'
 import NewLegalPricing from './pages/NewLegalPricing'
 import NewPricing from './pages/NewPricing'
+import NewResalePricing from './pages/NewResalePricing'
 import Profiles from './pages/Profiles'
 import ResetPassword from './pages/ResetPassword'
 import Settings from './pages/Settings'
@@ -33,6 +34,10 @@ const navItemsBySegment: Record<BusinessSegment, { to: string; label: string; en
     { to: '/honorarios', label: 'Nova precificação', end: true },
     { to: '/honorarios/perfis', label: 'Perfis salvos', end: false },
     { to: '/honorarios/historico', label: 'Histórico', end: false },
+  ],
+  revenda: [
+    { to: '/', label: 'Início', end: true },
+    { to: '/revenda', label: 'Nova precificação', end: false },
   ],
 }
 
@@ -226,6 +231,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LegalHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/revenda"
+            element={
+              <ProtectedRoute>
+                <NewResalePricing />
               </ProtectedRoute>
             }
           />

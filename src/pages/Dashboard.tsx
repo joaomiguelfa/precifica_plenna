@@ -132,7 +132,26 @@ function PrintingDashboard() {
   )
 }
 
+function ResaleDashboard() {
+  return (
+    <Card className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Precifique um novo produto de revenda</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Informe o custo de compra, as taxas das plataformas e a margem desejada — o app calcula o preço de venda
+          correto.
+        </p>
+      </div>
+      <Link to="/revenda">
+        <Button>+ Nova precificação</Button>
+      </Link>
+    </Card>
+  )
+}
+
 export default function Dashboard() {
   const { segment } = useSegment()
-  return <div className="space-y-6">{segment === 'bbcs_advocacia' ? <LegalDashboard /> : <PrintingDashboard />}</div>
+  if (segment === 'bbcs_advocacia') return <div className="space-y-6"><LegalDashboard /></div>
+  if (segment === 'revenda') return <div className="space-y-6"><ResaleDashboard /></div>
+  return <div className="space-y-6"><PrintingDashboard /></div>
 }
